@@ -1,3 +1,5 @@
 venv/
 erro_accert.png
 trace_headless.zip
+__pycache__/
+automacao.log

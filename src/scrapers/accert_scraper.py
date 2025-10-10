@@ -37,8 +37,11 @@ async def rastrear_accert(cnpj: str, nota_fiscal: str) -> dict:
             logger.info(f"{log_prefix} - 4. Clicando no botão de busca...")
             await page.click('button:has-text("Buscar encomendas")')
             
-            logger.info(f"{log_prefix} - 5. Aguardando resultados e clicando para ver detalhes...")
-            await page.get_by_role('button', name='Ver detalhes').click()
+            
+            logger.info(f"{log_prefix} - 5. Clicando no botão Ver detalhes")
+            elemento_chave = page.locator('span.text-base.font-semibold').first
+            await elemento_chave.wait_for(timeout=10000)
+            await page.click('button:has-text("Ver detalhes")')
             
             # --- EXTRAÇÃO DAS INFORMAÇÕES ---
             logger.info(f"{log_prefix} - 6. Extraindo informações da entrega...")

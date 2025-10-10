@@ -8,6 +8,8 @@ async def rastrear_viaverde(login: str, senha: str, nota_fiscal: str) -> dict:
 
     Args:
         cnpj: O CNPJ do remetente para a busca.
+        login: O login para acessar o sistema.
+        senha: A senha para acessar o sistema.
         nota_fiscal: O número da nota fiscal para a busca.
 
     Returns:
@@ -36,6 +38,33 @@ async def rastrear_viaverde(login: str, senha: str, nota_fiscal: str) -> dict:
             logger.info(f"{log_prefix} - 4. Clicando no botão de busca...")
             await page.click('button:has-text("Entrar")')
 
+            logger.info(f"{log_prefix} - 5. Clicando no botão de Consultas")
+            await page.locator('a:has(i.fa-search)').click()
+
+            logger.info(f"{log_prefix} - 6. Clicando no botão Por Documento")
+            await page.get_by_text("Por Documento").click()
+
+            logger.info(f"{log_prefix} - 7. Inserindo a Nota Fiscal: {nota_fiscal}")
+            await page.locator('#nrNf').fill(nota_fiscal)
+
+            logger.info(f"{log_prefix} - 8. Pesquisando status da entrega")
+            await page.click('button:has-text("Pesquisar")')
+
+            logger.info(f"{log_prefix} - 9. Coletando dados da tabela com status da entrega")
+            primeira_linha = page.locator("table.dataTable tbody tr").first
+            lista_de_ocorrencias = (await primeira_linha.locator("td.coluna-ocorrencias").text_content() or "").strip()
+            dados_entrega = (await primeira_linha.locator("td.coluna-dtentrega").text_content() or "").strip()
+
+            dados_da_linha = {
+                "data_entrega": dados_entrega,
+                "ocorrencias": lista_de_ocorrencias
+            }
+
+            resultado_final = {
+                "status": "sucesso",
+                "dados": dados_da_linha  # ATENÇÃO: 'dados' agora é um único objeto, não uma lista
+            }
+
         except TimeoutError:
             print("\nERRO: O tempo para encontrar um elemento expirou. Verifique os seletores ou a velocidade da sua conexão.")
             dados_entrega["detalhes"] = "Erro de timeout. O site demorou muito para responder ou a estrutura da página mudou."
@@ -48,7 +77,7 @@ async def rastrear_viaverde(login: str, senha: str, nota_fiscal: str) -> dict:
             await browser.close()
             logger.info(f"{log_prefix} - 7. Navegador fechado.")
 
-    return dados_entrega
+    return resultado_final
 
 async def main():
     # --- DADOS DE EXEMPLO ---

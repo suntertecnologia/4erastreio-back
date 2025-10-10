@@ -1,5 +1,5 @@
 import asyncio
-from config.logger_config import logger
+from ..config.logger_config import logger
 from playwright.async_api import async_playwright, TimeoutError
 import regex as re
 
@@ -40,16 +40,22 @@ async def rastrear_jamef(cnpj: str, nota_fiscal: str) -> dict:
             logger.info(f"{log_prefix} - 5. Clicando no botão de busca...")
             await page.click('button:has-text("PESQUISAR")')
 
-            logger.info("{log_prefix} - 6. Aguardando a página de resultados carregar...")
+            logger.info(f"{log_prefix} - 6. Aguardando a página de resultados carregar...")
             await page.wait_for_load_state("networkidle") # Espera a rede ficar ociosa
 
-            logger.info(f"{log_prefix} - 7. Clicando no botão de HISTÓRICO")
-            await page.click('button:has-text("Histórico")')
+            logger.info(f"{log_prefix} - 7. Clicando no botão de histórico")
+            async with page.expect_response("https://px.ads.linkedin.com/wa/?medium=fetch&fmt=g"): # <-- SUBSTITUA PELA URL QUE VOCÊ ENCONTROU
+                await page.click('button:has-text("Histórico")')
 
             logger.info(f"{log_prefix} - 8. Extraindo informações da entrega...")
             seletor_container = ".content"
             await page.wait_for_selector(seletor_container, timeout=15000)
             detalhes_texto = await page.inner_text(seletor_container)
+
+            dados_entrega = {
+                "status": "sucesso",
+                "detalhes": detalhes_texto.strip()
+            }
 
         except TimeoutError:
             print("\nERRO: O tempo para encontrar um elemento expirou. Verifique os seletores ou a velocidade da sua conexão.")

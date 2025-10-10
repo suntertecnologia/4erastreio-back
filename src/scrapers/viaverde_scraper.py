@@ -2,9 +2,9 @@ import asyncio
 from ..config.logger_config import logger
 from playwright.async_api import async_playwright, TimeoutError
 
-async def rastrear_accert(cnpj: str, nota_fiscal: str) -> dict:
+async def rastrear_viaverde(login: str, senha: str, nota_fiscal: str) -> dict:
     """
-    Realiza o web scraping do status de uma entrega no site da ACCERT.
+    Realiza o web scraping do status de uma entrega no site da Via Verde.
 
     Args:
         cnpj: O CNPJ do remetente para a busca.
@@ -21,35 +21,20 @@ async def rastrear_accert(cnpj: str, nota_fiscal: str) -> dict:
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=False) # Mude para False para ver o navegador abrindo
         page = await browser.new_page()
-        log_prefix = f"[CNPJ: {cnpj}, NF: {nota_fiscal}]" # Prefixo para identificar a entrega no logs
+        log_prefix = f"[NF: {nota_fiscal}]" # Prefixo para identificar a entrega no logs
         try:
-            logger.info(f"{log_prefix} - 1. Acessando a página de rastreamento da ACCERT")
-            await page.goto("https://cliente.accertlogistica.com.br/rastreamento", timeout=60000)
+            logger.info(f"{log_prefix} - 1. Acessando a página de rastreamento da Via Verde")
+            await page.goto("http://viaverde.supplytrack.com.br/login?ReturnUrl=%2f", timeout=60000)
 
-            # --- PREENCHIMENTO DOS DADOS ---
-            logger.info(f"{log_prefix} - 2. Preenchendo CNPJ: {cnpj}...")
-            await page.fill("#cnpjOrCpf", cnpj)
+        # --- LOGIN ---------
+            logger.info(f"{log_prefix} - 2. Preenchendo login: {login}...")
+            await page.fill("#login", login)
 
-            logger.info(f"{log_prefix} - 3. Preenchendo Nota Fiscal: {nota_fiscal}...")
-            nota_fiscal_input = await page.wait_for_selector('#notaFiscal')
-            await nota_fiscal_input.fill(nota_fiscal)
+            logger.info(f"{log_prefix} - 3. Preenchendo senha: {senha}...")
+            await page.fill("#senha", senha)
 
             logger.info(f"{log_prefix} - 4. Clicando no botão de busca...")
-            await page.click('button:has-text("Buscar encomendas")')
-            
-            logger.info(f"{log_prefix} - 5. Aguardando resultados e clicando para ver detalhes...")
-            await page.get_by_role('button', name='Ver detalhes').click()
-            
-            # --- EXTRAÇÃO DAS INFORMAÇÕES ---
-            logger.info(f"{log_prefix} - 6. Extraindo informações da entrega...")
-            seletor_container = ".border-separation"
-            await page.wait_for_selector(seletor_container, timeout=15000)
-            detalhes_texto = await page.inner_text(seletor_container)
-            
-            dados_entrega = {
-                "status": "sucesso",
-                "detalhes": detalhes_texto.strip()
-            }
+            await page.click('button:has-text("Entrar")')
 
         except TimeoutError:
             print("\nERRO: O tempo para encontrar um elemento expirou. Verifique os seletores ou a velocidade da sua conexão.")
@@ -65,13 +50,13 @@ async def rastrear_accert(cnpj: str, nota_fiscal: str) -> dict:
 
     return dados_entrega
 
-
 async def main():
     # --- DADOS DE EXEMPLO ---
-    # Substitua com um CNPJ e Nota Fiscal reais para testar
-    cnpj_exemplo = "11.173.954/0001-12"
+    # Substitua com uma Nota Fiscal para testar
     nota_fiscal_exemplo = "15095"
-    resultado = await rastrear_accert(cnpj_exemplo, nota_fiscal_exemplo)
+    login_exemplo = "pedidos@quatroestacoesdecoracoes.com.br"
+    senha_exemplo = "4estacoes"
+    resultado = await rastrear_viaverde(login_exemplo, senha_exemplo, nota_fiscal_exemplo)
 
     print("\n--- RESULTADO DO RASTREAMENTO ---")
     if resultado['status'] == 'sucesso':

@@ -110,15 +110,17 @@ async def rastrear_braspress(cnpj: str, nota_fiscal: str) -> dict:
             logger.info(f"{log_prefix} - 7. Entrando o iframe de rastreamento...")
             frame_locator = page.frame_locator("#iframe-tracking")
 
+            await page.wait_for_timeout(10000)
+
             logger.info(f"{log_prefix} - 8. Clicando no botão detalhes de rastreamento")
-            await frame_locator.locator('.details-title:has-text("Detalhes do Rastreamento")').click()
+            await frame_locator.get_by_text("Detalhes do Rastreamento").click()
 
             logger.info(f"{log_prefix} - 9. Clicando no botão mais detalhes")
             await frame_locator.get_by_text("Mais Detalhes").click()    
             
             # --- EXTRAÇÃO DAS INFORMAÇÕES ---
-            detailed_history = await _parse_detailed_history(page)
-            summary_steps = await _parse_summary_steps(page)
+            detailed_history = await _parse_detailed_history(frame_locator)
+            summary_steps = await _parse_summary_steps(frame_locator)
 
             # Monta o resultado final
             dados_entrega = {

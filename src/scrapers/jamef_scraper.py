@@ -19,7 +19,7 @@ async def rastrear_jamef(cnpj: str, nota_fiscal: str) -> dict:
         "detalhes": ""
     }
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False) # Mude para False para ver o navegador abrindo
+        browser = await p.chromium.launch(headless=True) # Mude para False para ver o navegador abrindo
         page = await browser.new_page()
         log_prefix = f"[CNPJ: {cnpj}, NF: {nota_fiscal}]" # Prefixo para identificar a entrega no logs
 

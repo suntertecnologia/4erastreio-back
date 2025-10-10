@@ -22,7 +22,7 @@ def export_data(company: str,cnpj: str, nota_fiscal: str):
                 return None
     return asyncio.run(get_tracking_data(company,cnpj, nota_fiscal))
         
-# Test braspress (CHATO)
+# Test braspress (OK)
 print(export_data("braspress","34.122.358/0001-09", "8231"))
 
 # Test accert (BOM) 

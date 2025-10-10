@@ -2,7 +2,34 @@ import asyncio
 from ..config.logger_config import logger
 from playwright.async_api import async_playwright, TimeoutError
 
-async def rastrear_viaverde(login: str, senha: str, nota_fiscal: str) -> dict:
+def treat_bras_crap(raw_data: dict,n_rastreio:str) -> dict:
+    """
+    Função para tratar os dados brutos retornados pelo scraper da Braspress.
+    Esta função pode ser expandida conforme necessário para ajustar o formato
+    dos dados ou extrair informações adicionais.
+
+    Args:
+        raw_data: Dicionário com os dados brutos do scraper.
+
+    Returns:
+        Dicionário tratado com as informações tratadas.
+    """
+    
+
+    dados_do_scraper = {
+    "transportadora": "Braspress",
+    "codigo_rastreio": n_rastreio,
+    "numero_nf": nota_fiscal,
+    "status": status,
+    "data_entrega": data_entrega,
+    "data_postagem": data_postagem,
+    "remetente": {"nome": remetente, "cnpj": None},
+    "destinatario": {"nome": destinatario, "cnpj": None},
+    "historico": ocorrencias
+}
+    return raw_data
+
+async def rastrear_viaverde(login: str, senha: str, n_rastreio: str) -> dict:
     """
     Realiza o web scraping do status de uma entrega no site da Via Verde.
 
@@ -23,7 +50,7 @@ async def rastrear_viaverde(login: str, senha: str, nota_fiscal: str) -> dict:
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=False) # Mude para False para ver o navegador abrindo
         page = await browser.new_page()
-        log_prefix = f"[NF: {nota_fiscal}]" # Prefixo para identificar a entrega no logs
+        log_prefix = f"[NF: {n_rastreio}]" # Prefixo para identificar a entrega no logs
         try:
             logger.info(f"{log_prefix} - 1. Acessando a página de rastreamento da Via Verde")
             await page.goto("http://viaverde.supplytrack.com.br/login?ReturnUrl=%2f", timeout=60000)
@@ -44,20 +71,26 @@ async def rastrear_viaverde(login: str, senha: str, nota_fiscal: str) -> dict:
             logger.info(f"{log_prefix} - 6. Clicando no botão Por Documento")
             await page.get_by_text("Por Documento").click()
 
-            logger.info(f"{log_prefix} - 7. Inserindo a Nota Fiscal: {nota_fiscal}")
-            await page.locator('#nrNf').fill(nota_fiscal)
+            logger.info(f"{log_prefix} - 7. Inserindo o n° rastreio: {n_rastreio}")
+            await page.locator('#nrNf').fill(n_rastreio)
 
             logger.info(f"{log_prefix} - 8. Pesquisando status da entrega")
             await page.click('button:has-text("Pesquisar")')
 
-            logger.info(f"{log_prefix} - 9. Coletando dados da tabela com status da entrega")
+            logger.info(f"{log_prefix} - 9. Coletando dados da tabela")
             primeira_linha = page.locator("table.dataTable tbody tr").first
             lista_de_ocorrencias = (await primeira_linha.locator("td.coluna-ocorrencias").text_content() or "").strip()
             dados_entrega = (await primeira_linha.locator("td.coluna-dtentrega").text_content() or "").strip()
-
+            remetente = (await primeira_linha.locator("td.coluna-remetente").text_content() or "").strip()
+            destinatario = (await primeira_linha.locator("td.coluna-destinatario").text_content() or "").strip()
+            n_notafiscal = (await primeira_linha.locator("td.coluna-nrnf").text_content() or "").strip()
             dados_da_linha = {
                 "data_entrega": dados_entrega,
-                "ocorrencias": lista_de_ocorrencias
+                "remetente": remetente,
+                "destinatario": destinatario,
+                "n_rastreio": n_rastreio,
+                "ocorrencias": lista_de_ocorrencias,
+                "n_notafiscal": n_notafiscal
             }
 
             resultado_final = {

@@ -83,7 +83,11 @@ async def rastrear_braspress(cnpj: str, nota_fiscal: str) -> dict:
     }
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=False) # Mude para False para ver o navegador abrindo
-        page = await browser.new_page()
+        context = await browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
+            viewport={"width": 1920, "height": 1080} # Também simule uma tela real
+        )
+        page = await context.new_page()
         log_prefix = f"[CNPJ: {cnpj}, NF: {nota_fiscal}]" # Prefixo para identificar a entrega no logs
 
         try:
@@ -110,13 +114,11 @@ async def rastrear_braspress(cnpj: str, nota_fiscal: str) -> dict:
             logger.info(f"{log_prefix} - 7. Entrando o iframe de rastreamento...")
             frame_locator = page.frame_locator("#iframe-tracking")
 
-            await page.wait_for_timeout(10000)
-
             logger.info(f"{log_prefix} - 8. Clicando no botão detalhes de rastreamento")
-            await frame_locator.get_by_text("Detalhes do Rastreamento").click()
+            await frame_locator.get_by_text("Detalhes do Rastreamento").first.click()
 
             logger.info(f"{log_prefix} - 9. Clicando no botão mais detalhes")
-            await frame_locator.get_by_text("Mais Detalhes").click()    
+            await frame_locator.get_by_text("Mais Detalhes").first.click()    
             
             # --- EXTRAÇÃO DAS INFORMAÇÕES ---
             detailed_history = await _parse_detailed_history(frame_locator)

@@ -47,6 +47,9 @@ class PasswordResetToken(Base):
     expires_at = Column(DateTime(timezone=True), nullable=False)
     is_used = Column(Boolean, default=False)
     criado_em = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    atualizado_em = Column(DateTime(timezone=True), onupdate=datetime.utcnow)
+    criado_por_id = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
+    atualizado_por_id = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
 
 class Entrega(Base):
     __tablename__ = 'entregas'

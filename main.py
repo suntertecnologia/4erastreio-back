@@ -2,7 +2,7 @@ from src.scrapers.braspress_scraper import rastrear_braspress
 from src.scrapers.jamef_scraper import rastrear_jamef
 from src.scrapers.viaverde_scraper import rastrear_viaverde
 from src.scrapers.accert_scraper import rastrear_accert
-from src.config.logger_config import logger
+from src.configs.logger_config import logger
 import asyncio
 import requests
 import json

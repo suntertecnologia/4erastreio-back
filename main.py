@@ -42,10 +42,11 @@ if __name__ == "__main__":
     # --- Exemplo de como usar ---
     # Altere os parâmetros conforme necessário
     tracking_data = export_data("viaverde", "48.775.1910001-90", "118895")
+    print(tracking_data)
 
-    if tracking_data:
-        # Envia os dados para a API
-        send_to_api(tracking_data)
+    # if tracking_data:
+    #     # Envia os dados para a API
+    #     send_to_api(tracking_data)
 
     # Você pode testar outras transportadoras também:
     # tracking_data_braspress = export_data("braspress","34.122.358/0001-09", "8231")

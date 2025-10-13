@@ -1,11 +1,77 @@
 import asyncio
-from ..config.logger_config import logger
-from playwright.async_api import async_playwright, TimeoutError
 import regex as re
+from ..config.logger_config import logger
+from .base_scraper import BaseScraper
+from .config import SCRAPER_URLS, TIMEOUTS
+from .models import ScraperResponse
+
+
+class JamefScraper(BaseScraper):
+    """Scraper for JAMEF logistics tracking."""
+
+    def __init__(self):
+        super().__init__("jamef")
+
+    async def scrape(self, cnpj: str, nota_fiscal: str) -> ScraperResponse:
+        """
+        Realiza o web scraping do status de uma entrega no site da JAMEF.
+
+        Args:
+            cnpj: O CNPJ do remetente para a busca.
+            nota_fiscal: O número da nota fiscal para a busca.
+
+        Returns:
+            ScraperResponse com as informações extraídas ou uma mensagem de erro.
+        """
+        page = await self.create_page()
+        log_prefix = self._get_log_prefix(cnpj=cnpj, nota_fiscal=nota_fiscal)
+
+        # 1. Acessar página de rastreamento
+        logger.info(f"{log_prefix} - Acessando a página de rastreamento da JAMEF")
+        await page.goto(SCRAPER_URLS["jamef"], timeout=TIMEOUTS["page_load"])
+
+        # 2. Preencher número de pedido (nota fiscal)
+        logger.info(f"{log_prefix} - Preenchendo número de pedido: {nota_fiscal}")
+        await page.get_by_placeholder("insira o n° da nota fiscal").fill(re.sub('[^0-9]', '', nota_fiscal))
+
+        # 3. Clicar no primeiro botão de pesquisa
+        logger.info(f"{log_prefix} - Clicando no botão de busca")
+        await page.click('button:has-text("PESQUISAR")')
+
+        # 4. Preencher CNPJ
+        logger.info(f"{log_prefix} - Preenchendo CNPJ: {cnpj}")
+        await page.get_by_placeholder("insira o CPF / CNPJ").fill(re.sub('[^0-9]', '', cnpj))
+
+        # 5. Clicar no segundo botão de pesquisa
+        logger.info(f"{log_prefix} - Clicando no botão de busca novamente")
+        await page.click('button:has-text("PESQUISAR")')
+
+        # 6. Aguardar página de resultados carregar
+        logger.info(f"{log_prefix} - Aguardando a página de resultados carregar")
+        await page.wait_for_load_state("networkidle")
+
+        # 7. Clicar no botão de histórico
+        logger.info(f"{log_prefix} - Clicando no botão de histórico")
+        async with page.expect_response("https://px.ads.linkedin.com/wa/?medium=fetch&fmt=g"):
+            await page.click('button:has-text("Histórico")')
+
+        # 8. Extrair informações da entrega
+        logger.info(f"{log_prefix} - Extraindo informações da entrega")
+        seletor_container = ".content"
+        await page.wait_for_selector(seletor_container, timeout=TIMEOUTS["selector_wait"])
+        detalhes_texto = await page.inner_text(seletor_container)
+
+        # Retornar dados estruturados
+        dados = {
+            "detalhes": detalhes_texto.strip()
+        }
+
+        return self.success_response(dados)
+
 
 async def rastrear_jamef(cnpj: str, nota_fiscal: str) -> dict:
     """
-    Realiza o web scraping do status de uma entrega no site da BRASPRESS.
+    Função wrapper para manter compatibilidade com código existente.
 
     Args:
         cnpj: O CNPJ do remetente para a busca.
@@ -14,62 +80,10 @@ async def rastrear_jamef(cnpj: str, nota_fiscal: str) -> dict:
     Returns:
         Um dicionário com as informações extraídas ou uma mensagem de erro.
     """
-    dados_entrega = {
-        "status": "falha",
-        "detalhes": ""
-    }
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True) # Mude para False para ver o navegador abrindo
-        page = await browser.new_page()
-        log_prefix = f"[CNPJ: {cnpj}, NF: {nota_fiscal}]" # Prefixo para identificar a entrega no logs
+    scraper = JamefScraper()
+    return await scraper.execute(cnpj=cnpj, nota_fiscal=nota_fiscal)
 
-        try:
-            logger.info(f"{log_prefix} - 1. Acessando a página de rastreamento da BrassPRESS")
-            await page.goto("https://www.jamef.com.br/", timeout=60000)
 
-            # --- PREENCHIMENTO DOS DADOS ---
-            logger.info(f"{log_prefix} - 2. Preenchendo número de pedido: {nota_fiscal}...")
-            await page.get_by_placeholder("insira o n° da nota fiscal").fill(re.sub('[^0-9]', '', nota_fiscal))
-
-            logger.info(f"{log_prefix} - 3. Clicando no botão de busca...")
-            await page.click('button:has-text("PESQUISAR")')
-
-            logger.info(f"{log_prefix} - 4. Preenchendo CNPJ: {cnpj}...")
-            await page.get_by_placeholder("insira o CPF / CNPJ").fill((re.sub('[^0-9]', '', cnpj)))
-
-            logger.info(f"{log_prefix} - 5. Clicando no botão de busca...")
-            await page.click('button:has-text("PESQUISAR")')
-
-            logger.info(f"{log_prefix} - 6. Aguardando a página de resultados carregar...")
-            await page.wait_for_load_state("networkidle") # Espera a rede ficar ociosa
-
-            logger.info(f"{log_prefix} - 7. Clicando no botão de histórico")
-            async with page.expect_response("https://px.ads.linkedin.com/wa/?medium=fetch&fmt=g"): # <-- SUBSTITUA PELA URL QUE VOCÊ ENCONTROU
-                await page.click('button:has-text("Histórico")')
-
-            logger.info(f"{log_prefix} - 8. Extraindo informações da entrega...")
-            seletor_container = ".content"
-            await page.wait_for_selector(seletor_container, timeout=15000)
-            detalhes_texto = await page.inner_text(seletor_container)
-
-            dados_entrega = {
-                "status": "sucesso",
-                "detalhes": detalhes_texto.strip()
-            }
-
-        except TimeoutError:
-            print("\nERRO: O tempo para encontrar um elemento expirou. Verifique os seletores ou a velocidade da sua conexão.")
-            dados_entrega["detalhes"] = "Erro de timeout. O site demorou muito para responder ou a estrutura da página mudou."
-        except Exception as e:
-            logger.exception(f"{log_prefix} - Ocorreu um erro inesperado: {e}")
-            await page.screenshot(path='erro_accert.png') # Tira uma foto da tela para ajudar a depurar
-            dados_entrega["detalhes"] = {"error": str(e)}
-
-        finally:
-            await browser.close()
-            logger.info(f"{log_prefix} - 9. Navegador fechado.")
-        return dados_entrega
-    
 async def main():
     # --- DADOS DE EXEMPLO ---
     # Substitua com um CNPJ e Nota Fiscal reais para testar
@@ -79,9 +93,9 @@ async def main():
 
     print("\n--- RESULTADO DO RASTREAMENTO ---")
     if resultado['status'] == 'sucesso':
-        print(resultado['detalhes'])
+        print(resultado['dados'])
     else:
-        print(f"Falha no rastreamento: {resultado['detalhes']}")
+        print(f"Falha no rastreamento: {resultado['erro']}")
     print("---------------------------------")
 
 

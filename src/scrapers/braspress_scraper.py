@@ -5,7 +5,7 @@ from ..config.logger_config import logger
 from playwright.async_api import Page
 from .base_scraper import BaseScraper
 from .config import SCRAPER_URLS, TIMEOUTS
-from .models import ScraperResponse
+from .scrapper_data_model import ScraperResponse
 
 
 async def _parse_detailed_history(page: Page) -> list[dict]:

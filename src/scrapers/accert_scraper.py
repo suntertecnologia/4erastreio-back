@@ -2,7 +2,7 @@ import asyncio
 from ..config.logger_config import logger
 from .base_scraper import BaseScraper
 from .config import SCRAPER_URLS, TIMEOUTS
-from .models import ScraperResponse
+from .scrapper_data_model import ScraperResponse
 
 
 class AccertScraper(BaseScraper):

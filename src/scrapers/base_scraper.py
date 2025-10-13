@@ -9,7 +9,7 @@ from typing import Optional
 from playwright.async_api import async_playwright, Browser, Page, TimeoutError as PlaywrightTimeoutError
 from ..config.logger_config import logger
 from .config import BROWSER_CONFIG, TIMEOUTS, SCREENSHOT_DIR, SCREENSHOT_ENABLED
-from .models import ScraperResponse, ErrorInfo
+from .scrapper_data_model import ScraperResponse, ErrorInfo
 
 
 class BaseScraper(ABC):

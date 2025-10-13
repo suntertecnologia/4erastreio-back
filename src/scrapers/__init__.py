@@ -7,7 +7,7 @@ All scrapers inherit from BaseScraper and follow a consistent interface.
 
 from .base_scraper import BaseScraper
 from .config import BROWSER_CONFIG, TIMEOUTS, SCRAPER_URLS
-from .models import ScraperResponse, ErrorInfo
+from .scrapper_data_model import ScraperResponse, ErrorInfo
 
 # Import scraper classes
 from .accert_scraper import AccertScraper, rastrear_accert

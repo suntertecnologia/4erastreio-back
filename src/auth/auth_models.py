@@ -1,14 +1,15 @@
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 
 class UserAuth(BaseModel):
-    username: str
+    email: EmailStr
     password: str
 
 class UserOut(BaseModel):
     username: str = Field(alias='nome')
-    email: str
+    email: EmailStr
     cargo: str
+    is_active: bool
 
     class Config:
         orm_mode = True
@@ -17,3 +18,14 @@ class UserOut(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    refresh_token: str
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str

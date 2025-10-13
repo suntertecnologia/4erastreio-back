@@ -8,7 +8,8 @@ from sqlalchemy import (
     DateTime,
     Date,
     Text,
-    ForeignKey
+    ForeignKey,
+    Boolean
 )
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -27,6 +28,7 @@ class Usuario(Base):
     email = Column(String(255), unique=True, nullable=False)
     senha_hash = Column(String(255), nullable=False)
     cargo = Column(String(50), nullable=False)
+    is_active = Column(Boolean, default=True)
     
     # Timestamps com valor padrão
     criado_em = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
@@ -35,6 +37,16 @@ class Usuario(Base):
     # Auto-relacionamento para auditoria (opcional, mas uma boa prática)
     criado_por_id = Column(Integer, ForeignKey('usuarios.id'))
     atualizado_por_id = Column(Integer, ForeignKey('usuarios.id'))
+
+class PasswordResetToken(Base):
+    __tablename__ = 'password_reset_tokens'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('usuarios.id'), nullable=False)
+    token = Column(String(255), unique=True, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    is_used = Column(Boolean, default=False)
+    criado_em = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
 
 class Entrega(Base):
     __tablename__ = 'entregas'

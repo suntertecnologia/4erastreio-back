@@ -2,32 +2,32 @@ import asyncio
 from ..config.logger_config import logger
 from playwright.async_api import async_playwright, TimeoutError
 
-def treat_bras_crap(raw_data: dict,n_rastreio:str) -> dict:
+def treat_lista_ocorrencias(ocorrencias_raw: str) -> list:
     """
-    Função para tratar os dados brutos retornados pelo scraper da Braspress.
+    Função para tratar a string de ocorrências retornada pelo scraper da Braspress.
     Esta função pode ser expandida conforme necessário para ajustar o formato
     dos dados ou extrair informações adicionais.
 
     Args:
-        raw_data: Dicionário com os dados brutos do scraper.
+        ocorrencias_raw: String bruta com as ocorrências do scraper.
 
     Returns:
-        Dicionário tratado com as informações tratadas.
+        Lista de dicionários com as ocorrências tratadas.
     """
-    
-
-    dados_do_scraper = {
-    "transportadora": "Braspress",
-    "codigo_rastreio": n_rastreio,
-    "numero_nf": nota_fiscal,
-    "status": status,
-    "data_entrega": data_entrega,
-    "data_postagem": data_postagem,
-    "remetente": {"nome": remetente, "cnpj": None},
-    "destinatario": {"nome": destinatario, "cnpj": None},
-    "historico": ocorrencias
-}
-    return raw_data
+    ocorrencias = []
+    for linha in ocorrencias_raw.split('\n'):
+        linha = linha.strip()
+        if linha:
+            ocorrencias.append({
+                "timestamp": None,  # Data/hora não disponível por evento na fonte
+                "status": linha,
+                "local": {
+                    "cidade": None, # Não disponível por evento
+                    "estado": None  # Não disponível por evento
+                },
+                "detalhes": "" # Não disponível
+            })
+    return ocorrencias
 
 async def rastrear_viaverde(login: str, senha: str, n_rastreio: str) -> dict:
     """
@@ -84,12 +84,13 @@ async def rastrear_viaverde(login: str, senha: str, n_rastreio: str) -> dict:
             remetente = (await primeira_linha.locator("td.coluna-remetente").text_content() or "").strip()
             destinatario = (await primeira_linha.locator("td.coluna-destinatario").text_content() or "").strip()
             n_notafiscal = (await primeira_linha.locator("td.coluna-nrnf").text_content() or "").strip()
+
             dados_da_linha = {
                 "data_entrega": dados_entrega,
                 "remetente": remetente,
                 "destinatario": destinatario,
                 "n_rastreio": n_rastreio,
-                "ocorrencias": lista_de_ocorrencias,
+                "ocorrencias": treat_lista_ocorrencias(lista_de_ocorrencias),
                 "n_notafiscal": n_notafiscal
             }
 
@@ -108,25 +109,6 @@ async def rastrear_viaverde(login: str, senha: str, n_rastreio: str) -> dict:
 
         finally:
             await browser.close()
-            logger.info(f"{log_prefix} - 7. Navegador fechado.")
+            logger.info(f"{log_prefix} - 10. Navegador fechado.")
 
     return resultado_final
-
-async def main():
-    # --- DADOS DE EXEMPLO ---
-    # Substitua com uma Nota Fiscal para testar
-    nota_fiscal_exemplo = "15095"
-    login_exemplo = "pedidos@quatroestacoesdecoracoes.com.br"
-    senha_exemplo = "4estacoes"
-    resultado = await rastrear_viaverde(login_exemplo, senha_exemplo, nota_fiscal_exemplo)
-
-    print("\n--- RESULTADO DO RASTREAMENTO ---")
-    if resultado['status'] == 'sucesso':
-        print(resultado['detalhes'])
-    else:
-        print(f"Falha no rastreamento: {resultado['detalhes']}")
-    print("---------------------------------")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

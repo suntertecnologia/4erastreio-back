@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 from playwright.async_api import async_playwright, Browser, Page, TimeoutError as PlaywrightTimeoutError
-from ..config.logger_config import logger
+from ..configs.logger_config import logger
 from .config import BROWSER_CONFIG, TIMEOUTS, SCREENSHOT_DIR, SCREENSHOT_ENABLED
 from .scrapper_data_model import ScraperResponse, ErrorInfo
 

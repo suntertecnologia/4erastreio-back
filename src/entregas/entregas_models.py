@@ -10,7 +10,7 @@ class EntregaMovimentacaoOut(BaseModel):
     detalhes: Optional[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class EntregaOut(BaseModel):
     transportadora: str
@@ -23,7 +23,7 @@ class EntregaOut(BaseModel):
     movimentacoes: List[EntregaMovimentacaoOut]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class EntregaMovimentacaoCreate(BaseModel):
     movimento: str
@@ -41,3 +41,8 @@ class EntregaCreate(BaseModel):
     status: Optional[str]
     previsao_entrega: Optional[date]
     movimentacoes: List[EntregaMovimentacaoCreate]
+
+class EntregaScrapRequest(BaseModel):
+    transportadora: str
+    numero_nf: str
+    cnpj_destinatario: str

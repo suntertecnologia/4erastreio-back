@@ -12,8 +12,8 @@ class UserOut(BaseModel):
     is_active: bool
 
     class Config:
-        orm_mode = True
-        allow_population_by_field_name = True
+        from_attributes = True
+        populate_by_name = True
 
 class Token(BaseModel):
     access_token: str

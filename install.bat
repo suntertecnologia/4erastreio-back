@@ -5,6 +5,8 @@ if not exist venv (
     echo "Criando ambiente virtual..."
     python -m venv venv
 )
+else
+    echo "Já existe ambiente"
 
 echo "Ativando o ambiente virtual..."
 call venv\Scripts\activate.bat

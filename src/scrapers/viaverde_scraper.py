@@ -73,9 +73,13 @@ class ViaVerdeScraper(BaseScraper):
         logger.info(f"{log_prefix} - Clicando no botão de Consultas")
         await page.locator("a:has(i.fa-search)").click()
 
+        # Wait for the "Por Documento" link to be visible
+        por_documento_link = page.get_by_text("Por Documento")
+        await por_documento_link.wait_for(state="visible", timeout=30000)
+
         # 6. Clicar no botão Por Documento
         logger.info(f"{log_prefix} - Clicando no botão Por Documento")
-        await page.get_by_text("Por Documento").click()
+        await por_documento_link.click()
 
         # 7. Inserir número de rastreio
         logger.info(f"{log_prefix} - Inserindo o n° rastreio: {n_rastreio}")

@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI
 from src.auth import auth_routes
 from src.db import models
@@ -12,9 +11,11 @@ app = FastAPI()
 
 app.include_router(auth_routes.router, prefix="/auth")
 
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the SunterCode Tracking API"}
+
 
 @app.post("/receber_json")
 def receber_json(data: StandardizedDeliveryData):

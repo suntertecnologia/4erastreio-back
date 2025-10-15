@@ -3,10 +3,13 @@ uvicorn
 sqlalchemy
 pydantic
 pydantic-settings
-pydantic[email]
 python-jose[cryptography]
-passlib
-bcrypt==4.0.1
+passlib[bcrypt]
 requests
 python-dotenv
 psycopg2
+pytest
+pytest-asyncio
+httpx
+black
+ruff

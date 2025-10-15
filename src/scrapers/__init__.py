@@ -6,7 +6,7 @@ All scrapers inherit from BaseScraper and follow a consistent interface.
 """
 
 from .base_scraper import BaseScraper
-from .config import BROWSER_CONFIG, TIMEOUTS, SCRAPER_URLS
+from ..configs.config import BROWSER_CONFIG, TIMEOUTS, SCRAPER_URLS
 from .scrapper_data_model import ScraperResponse, ErrorInfo
 
 # Import scraper classes
@@ -23,13 +23,11 @@ __all__ = [
     "SCRAPER_URLS",
     "ScraperResponse",
     "ErrorInfo",
-
     # Scraper classes
     "AccertScraper",
     "JamefScraper",
     "BrasspressScraper",
     "ViaVerdeScraper",
-
     # Legacy functions for backward compatibility
     "rastrear_accert",
     "rastrear_jamef",

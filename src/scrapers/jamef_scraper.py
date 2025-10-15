@@ -1,9 +1,10 @@
 import asyncio
 import regex as re
-from ..config.logger_config import logger
+from ..configs.logger_config import logger
 from .base_scraper import BaseScraper
-from .config import SCRAPER_URLS, TIMEOUTS
+from ..configs.config import SCRAPER_URLS, TIMEOUTS
 from .scrapper_data_model import ScraperResponse
+from ..utils.normalize_scrap_data import normalize_jamef
 
 
 class JamefScraper(BaseScraper):
@@ -32,7 +33,9 @@ class JamefScraper(BaseScraper):
 
         # 2. Preencher número de pedido (nota fiscal)
         logger.info(f"{log_prefix} - Preenchendo número de pedido: {nota_fiscal}")
-        await page.get_by_placeholder("insira o n° da nota fiscal").fill(re.sub('[^0-9]', '', nota_fiscal))
+        await page.get_by_placeholder("insira o n° da nota fiscal").fill(
+            re.sub("[^0-9]", "", nota_fiscal)
+        )
 
         # 3. Clicar no primeiro botão de pesquisa
         logger.info(f"{log_prefix} - Clicando no botão de busca")
@@ -40,7 +43,9 @@ class JamefScraper(BaseScraper):
 
         # 4. Preencher CNPJ
         logger.info(f"{log_prefix} - Preenchendo CNPJ: {cnpj}")
-        await page.get_by_placeholder("insira o CPF / CNPJ").fill(re.sub('[^0-9]', '', cnpj))
+        await page.get_by_placeholder("insira o CPF / CNPJ").fill(
+            re.sub("[^0-9]", "", cnpj)
+        )
 
         # 5. Clicar no segundo botão de pesquisa
         logger.info(f"{log_prefix} - Clicando no botão de busca novamente")
@@ -52,21 +57,24 @@ class JamefScraper(BaseScraper):
 
         # 7. Clicar no botão de histórico
         logger.info(f"{log_prefix} - Clicando no botão de histórico")
-        async with page.expect_response("https://px.ads.linkedin.com/wa/?medium=fetch&fmt=g"):
+        async with page.expect_response(
+            "https://px.ads.linkedin.com/wa/?medium=fetch&fmt=g"
+        ):
             await page.click('button:has-text("Histórico")')
 
         # 8. Extrair informações da entrega
         logger.info(f"{log_prefix} - Extraindo informações da entrega")
         seletor_container = ".content"
-        await page.wait_for_selector(seletor_container, timeout=TIMEOUTS["selector_wait"])
+        await page.wait_for_selector(
+            seletor_container, timeout=TIMEOUTS["selector_wait"]
+        )
         detalhes_texto = await page.inner_text(seletor_container)
 
         # Retornar dados estruturados
-        dados = {
-            "detalhes": detalhes_texto.strip()
-        }
-
-        return self.success_response(dados)
+        dados = {"detalhes": detalhes_texto.strip()}
+        logger.info(f"{log_prefix} - Dados extraídos: {dados}")
+        normalized_data = normalize_jamef(dados)
+        return self.success_response(normalized_data)
 
 
 async def rastrear_jamef(cnpj: str, nota_fiscal: str) -> dict:
@@ -92,8 +100,8 @@ async def main():
     resultado = await rastrear_jamef(cnpj_exemplo, nota_fiscal_exemplo)
 
     print("\n--- RESULTADO DO RASTREAMENTO ---")
-    if resultado['status'] == 'sucesso':
-        print(resultado['dados'])
+    if resultado["status"] == "sucesso":
+        print(resultado["dados"])
     else:
         print(f"Falha no rastreamento: {resultado['erro']}")
     print("---------------------------------")

@@ -1,14 +1,23 @@
 """
 Base scraper class with common functionality for all scrapers.
 """
-import asyncio
+
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-from playwright.async_api import async_playwright, Browser, Page, TimeoutError as PlaywrightTimeoutError
+from playwright.async_api import (
+    async_playwright,
+    Browser,
+    Page,
+    TimeoutError as PlaywrightTimeoutError,
+)
 from ..configs.logger_config import logger
-from .config import BROWSER_CONFIG, TIMEOUTS, SCREENSHOT_DIR, SCREENSHOT_ENABLED
+from ..configs.config import (
+    BROWSER_CONFIG,
+    SCREENSHOT_DIR,
+    SCREENSHOT_ENABLED,
+)
 from .scrapper_data_model import ScraperResponse, ErrorInfo
 
 
@@ -50,8 +59,7 @@ class BaseScraper(ABC):
 
         # Create context with user agent and viewport
         context = await self.browser.new_context(
-            user_agent=BROWSER_CONFIG["user_agent"],
-            viewport=BROWSER_CONFIG["viewport"]
+            user_agent=BROWSER_CONFIG["user_agent"], viewport=BROWSER_CONFIG["viewport"]
         )
 
         self.page = await context.new_page()
@@ -127,7 +135,7 @@ class BaseScraper(ABC):
         return {
             "tipo": error_type,
             "mensagem": message,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
     def success_response(self, dados: dict) -> ScraperResponse:
@@ -140,11 +148,7 @@ class BaseScraper(ABC):
         Returns:
             ScraperResponse with success status.
         """
-        return {
-            "status": "sucesso",
-            "dados": dados,
-            "erro": None
-        }
+        return {"status": "sucesso", "dados": dados, "erro": None}
 
     def error_response(self, error_type: str, message: str) -> ScraperResponse:
         """
@@ -160,7 +164,7 @@ class BaseScraper(ABC):
         return {
             "status": "falha",
             "dados": None,
-            "erro": self._create_error_info(error_type, message)
+            "erro": self._create_error_info(error_type, message),
         }
 
     async def execute(self, *args, **kwargs) -> ScraperResponse:
@@ -174,7 +178,13 @@ class BaseScraper(ABC):
         Returns:
             ScraperResponse with results or error information.
         """
-        log_prefix = self._get_log_prefix(**{k: v for k, v in kwargs.items() if k in ['cnpj', 'nota_fiscal', 'n_rastreio']})
+        log_prefix = self._get_log_prefix(
+            **{
+                k: v
+                for k, v in kwargs.items()
+                if k in ["cnpj", "nota_fiscal", "n_rastreio"]
+            }
+        )
 
         try:
             logger.info(f"{log_prefix} Starting scraper execution")
@@ -190,16 +200,13 @@ class BaseScraper(ABC):
             await self._take_screenshot("timeout")
             return self.error_response(
                 "timeout",
-                "O tempo para encontrar um elemento expirou. Verifique os seletores ou a velocidade da sua conexão."
+                "O tempo para encontrar um elemento expirou. Verifique os seletores ou a velocidade da sua conexão.",
             )
 
         except Exception as e:
             logger.exception(f"{log_prefix} Unexpected error: {e}")
             await self._take_screenshot("exception")
-            return self.error_response(
-                "exception",
-                f"Erro inesperado: {str(e)}"
-            )
+            return self.error_response("exception", f"Erro inesperado: {str(e)}")
 
     @abstractmethod
     async def scrape(self, *args, **kwargs) -> ScraperResponse:

@@ -1,11 +1,10 @@
-import asyncio
-import json
 import re
-from ..config.logger_config import logger
+from ..configs.logger_config import logger
 from playwright.async_api import Page
 from .base_scraper import BaseScraper
-from .config import SCRAPER_URLS, TIMEOUTS
+from ..configs.config import SCRAPER_URLS, TIMEOUTS
 from .scrapper_data_model import ScraperResponse
+from ..utils.normalize_scrap_data import normalize_braspress
 
 
 async def _parse_detailed_history(page: Page) -> list[dict]:
@@ -14,7 +13,9 @@ async def _parse_detailed_history(page: Page) -> list[dict]:
     container = page.locator("#timeline2482705908231")
 
     # Encontra todas as entradas individuais na timeline
-    event_locators = await container.locator(".vertical-time-line._tracking-datail").all()
+    event_locators = await container.locator(
+        ".vertical-time-line._tracking-datail"
+    ).all()
 
     for event_locator in event_locators:
         status_text = ""
@@ -25,7 +26,7 @@ async def _parse_detailed_history(page: Page) -> list[dict]:
         if await info_loc.count() > 0:
             status_text = await info_loc.inner_text()
             # Limpa o texto, removendo tags <br> e outros elementos internos
-            status_text = re.sub(r'<br>.*', '', status_text).strip()
+            status_text = re.sub(r"<br>.*", "", status_text).strip()
 
         # Pega a data e hora
         date_loc = event_locator.locator(".vertical-time-line-date")
@@ -33,10 +34,7 @@ async def _parse_detailed_history(page: Page) -> list[dict]:
             timestamp_text = (await date_loc.text_content() or "").strip()
 
         if status_text and timestamp_text:
-            history_events.append({
-                "timestamp": timestamp_text,
-                "status": status_text
-            })
+            history_events.append({"timestamp": timestamp_text, "status": status_text})
 
     return history_events
 
@@ -64,10 +62,7 @@ async def _parse_summary_steps(page: Page) -> list[dict]:
             date_text = (await date_loc.text_content() or "").strip()
 
         if step_text and date_text:
-            summary_steps.append({
-                "date": date_text,
-                "step": step_text
-            })
+            summary_steps.append({"date": date_text, "step": step_text})
 
     return summary_steps
 
@@ -102,7 +97,9 @@ class BrasspressScraper(BaseScraper):
 
         # 3. Preencher Nota Fiscal
         logger.info(f"{log_prefix} - Preenchendo Nota Fiscal: {nota_fiscal}")
-        nota_fiscal_input = await page.wait_for_selector('#pedido-tracking', timeout=TIMEOUTS["selector_wait"])
+        nota_fiscal_input = await page.wait_for_selector(
+            "#pedido-tracking", timeout=TIMEOUTS["selector_wait"]
+        )
         await nota_fiscal_input.fill(nota_fiscal)
 
         # 4. Fechar pop-up
@@ -111,7 +108,7 @@ class BrasspressScraper(BaseScraper):
 
         # 5. Clicar no botão de busca
         logger.info(f"{log_prefix} - Clicando no botão de busca")
-        await page.locator('.search-tracking').click()
+        await page.locator(".search-tracking").click()
 
         # 6. Aguardar página de resultados carregar
         logger.info(f"{log_prefix} - Aguardando a página de resultados carregar")
@@ -137,10 +134,12 @@ class BrasspressScraper(BaseScraper):
         # Retornar dados estruturados
         dados = {
             "resumo_etapas": summary_steps,
-            "historico_detalhado": detailed_history
+            "historico_detalhado": detailed_history,
         }
 
-        return self.success_response(dados)
+        logger.info(f"{log_prefix} - Dados extraídos: {dados}")
+        normalized_data = normalize_braspress(dados)
+        return self.success_response(normalized_data)
 
 
 async def rastrear_braspress(cnpj: str, nota_fiscal: str) -> dict:
@@ -156,22 +155,3 @@ async def rastrear_braspress(cnpj: str, nota_fiscal: str) -> dict:
     """
     scraper = BrasspressScraper()
     return await scraper.execute(cnpj=cnpj, nota_fiscal=nota_fiscal)
-
-
-async def main():
-    # --- DADOS DE EXEMPLO ---
-    # Substitua com um CNPJ e Nota Fiscal reais para testar
-    cnpj_exemplo = "34.122.358/0001-09"
-    nota_fiscal_exemplo = "8231"
-    resultado = await rastrear_braspress(cnpj_exemplo, nota_fiscal_exemplo)
-
-    print("\n--- RESULTADO DO RASTREAMENTO ---")
-    if resultado and resultado.get('status') == 'sucesso':
-        print(json.dumps(resultado['dados'], indent=2, ensure_ascii=False))
-    else:
-        print(f"Ocorreu uma falha no rastreamento: {resultado}")
-    print("---------------------------------")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

@@ -1,8 +1,8 @@
-import asyncio
-from ..config.logger_config import logger
+from ..configs.logger_config import logger
 from .base_scraper import BaseScraper
-from .config import SCRAPER_URLS
+from ..configs.config import SCRAPER_URLS
 from .scrapper_data_model import ScraperResponse
+from ..utils.normalize_scrap_data import normalize_viaverde
 
 
 def treat_lista_ocorrencias(ocorrencias_raw: str) -> list:
@@ -18,18 +18,17 @@ def treat_lista_ocorrencias(ocorrencias_raw: str) -> list:
         Lista de dicionários com as ocorrências tratadas.
     """
     ocorrencias = []
-    for linha in ocorrencias_raw.split('\n'):
+    for linha in ocorrencias_raw.split("\n"):
         linha = linha.strip()
         if linha:
-            ocorrencias.append({
-                "timestamp": None,
-                "status": linha,
-                "local": {
-                    "cidade": None,
-                    "estado": None
-                },
-                "detalhes": ""
-            })
+            ocorrencias.append(
+                {
+                    "timestamp": None,
+                    "status": linha,
+                    "local": {"cidade": None, "estado": None},
+                    "detalhes": "",
+                }
+            )
     return ocorrencias
 
 
@@ -72,7 +71,7 @@ class ViaVerdeScraper(BaseScraper):
 
         # 5. Clicar no botão de Consultas
         logger.info(f"{log_prefix} - Clicando no botão de Consultas")
-        await page.locator('a:has(i.fa-search)').click()
+        await page.locator("a:has(i.fa-search)").click()
 
         # 6. Clicar no botão Por Documento
         logger.info(f"{log_prefix} - Clicando no botão Por Documento")
@@ -80,7 +79,7 @@ class ViaVerdeScraper(BaseScraper):
 
         # 7. Inserir número de rastreio
         logger.info(f"{log_prefix} - Inserindo o n° rastreio: {n_rastreio}")
-        await page.locator('#nrNf').fill(n_rastreio)
+        await page.locator("#nrNf").fill(n_rastreio)
 
         # 8. Pesquisar status da entrega
         logger.info(f"{log_prefix} - Pesquisando status da entrega")
@@ -89,11 +88,21 @@ class ViaVerdeScraper(BaseScraper):
         # 9. Coletar dados da tabela
         logger.info(f"{log_prefix} - Coletando dados da tabela")
         primeira_linha = page.locator("table.dataTable tbody tr").first
-        lista_de_ocorrencias = (await primeira_linha.locator("td.coluna-ocorrencias").text_content() or "").strip()
-        data_entrega = (await primeira_linha.locator("td.coluna-dtentrega").text_content() or "").strip()
-        remetente = (await primeira_linha.locator("td.coluna-remetente").text_content() or "").strip()
-        destinatario = (await primeira_linha.locator("td.coluna-destinatario").text_content() or "").strip()
-        n_notafiscal = (await primeira_linha.locator("td.coluna-nrnf").text_content() or "").strip()
+        lista_de_ocorrencias = (
+            await primeira_linha.locator("td.coluna-ocorrencias").text_content() or ""
+        ).strip()
+        data_entrega = (
+            await primeira_linha.locator("td.coluna-dtentrega").text_content() or ""
+        ).strip()
+        remetente = (
+            await primeira_linha.locator("td.coluna-remetente").text_content() or ""
+        ).strip()
+        destinatario = (
+            await primeira_linha.locator("td.coluna-destinatario").text_content() or ""
+        ).strip()
+        n_notafiscal = (
+            await primeira_linha.locator("td.coluna-nrnf").text_content() or ""
+        ).strip()
 
         # Retornar dados estruturados
         dados = {
@@ -102,10 +111,12 @@ class ViaVerdeScraper(BaseScraper):
             "destinatario": destinatario,
             "n_rastreio": n_rastreio,
             "ocorrencias": treat_lista_ocorrencias(lista_de_ocorrencias),
-            "n_notafiscal": n_notafiscal
+            "n_notafiscal": n_notafiscal,
         }
 
-        return self.success_response(dados)
+        logger.info(f"{log_prefix} - Dados extraídos: {dados}")
+        normalized_data = normalize_viaverde(dados)
+        return self.success_response(normalized_data)
 
 
 async def rastrear_viaverde(login: str, senha: str, n_rastreio: str) -> dict:
@@ -122,23 +133,3 @@ async def rastrear_viaverde(login: str, senha: str, n_rastreio: str) -> dict:
     """
     scraper = ViaVerdeScraper()
     return await scraper.execute(login=login, senha=senha, n_rastreio=n_rastreio)
-
-
-async def main():
-    # --- DADOS DE EXEMPLO ---
-    # Substitua com credenciais e número de rastreio reais para testar
-    login_exemplo = "seu_login"
-    senha_exemplo = "sua_senha"
-    n_rastreio_exemplo = "12345"
-    resultado = await rastrear_viaverde(login_exemplo, senha_exemplo, n_rastreio_exemplo)
-
-    print("\n--- RESULTADO DO RASTREAMENTO ---")
-    if resultado['status'] == 'sucesso':
-        print(resultado['dados'])
-    else:
-        print(f"Falha no rastreamento: {resultado['erro']}")
-    print("---------------------------------")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

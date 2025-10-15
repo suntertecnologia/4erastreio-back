@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import date
-from typing import Optional
+from typing import Optional, List
 
 
 class EntregaBase(BaseModel):
@@ -15,7 +15,7 @@ class EntregaBase(BaseModel):
 
 
 class EntregaCreate(EntregaBase):
-    pass
+    historico: Optional[List[dict]] = None
 
 
 class EntregaUpdate(BaseModel):

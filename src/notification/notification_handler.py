@@ -16,16 +16,15 @@ def send_notification_email(subject: str, message: str, to_email: str):
     SMTP_PORT = os.getenv("SMTP_PORT")
     SMTP_USER = os.getenv("SMTP_USER")
     SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-    FROM_EMAIL = os.getenv("FROM_EMAIL")
 
-    if not all([SMTP_SERVER, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, FROM_EMAIL]):
+    if not all([SMTP_SERVER, SMTP_PORT, SMTP_USER, SMTP_PASSWORD]):
         logger.error(
             "Missing one or more SMTP environment variables for email notification."
         )
         return
 
     msg = MIMEMultipart()
-    msg["From"] = FROM_EMAIL
+    msg["From"] = SMTP_USER
     msg["To"] = to_email
     msg["Subject"] = subject
     msg.attach(MIMEText(message, "plain"))
@@ -35,7 +34,8 @@ def send_notification_email(subject: str, message: str, to_email: str):
         server.starttls()
         server.login(SMTP_USER, SMTP_PASSWORD)
         text = msg.as_string()
-        server.sendmail(FROM_EMAIL, to_email, text)
+        logger.info(f"Sending email to {to_email}...")
+        server.sendmail(from_addr=SMTP_USER, to_addrs=to_email, msg=text)
         server.quit()
         logger.info(f"Email sent successfully to {to_email}")
     except Exception as e:
@@ -44,6 +44,8 @@ def send_notification_email(subject: str, message: str, to_email: str):
 
 def process_pending_notifications(user_id: int):
     """Processes all pending notifications."""
+    load_dotenv()
+    TO_EMAIL = os.getenv("SMTP_USER")
     db: Session = database.SessionLocal()
     try:
         pending_notifications = notification_crud.get_pending_notifications(db)
@@ -55,9 +57,7 @@ def process_pending_notifications(user_id: int):
         for mov in pending_notifications:
             message += f"Entrega ID: {mov.entrega_id} - Status: {mov.status}\n"
 
-        # In a real application, you would get the user's email from the database
-        to_email = "user@example.com"
-        send_notification_email("Atualização de Entregas", message, to_email)
+        send_notification_email("Atualização de Entregas", message, TO_EMAIL)
 
         log = notification_crud.create_notification_log(
             db, detalhes=message, status="enviado", entrega_id=None, user_id=user_id

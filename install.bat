@@ -17,5 +17,8 @@ pip install -r requirements.txt
 echo "Instalando o pre-commit..."
 pre-commit install
 
+echo "Instalando o playwright"
+playwright install
+
 echo "Instalacao finalizada."
 pause

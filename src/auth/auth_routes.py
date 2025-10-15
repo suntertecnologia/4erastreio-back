@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from src.auth import auth_crud, auth_handler, auth_models
 from src.db import database
 from src.configs.logger_config import logger
-from datetime import datetime, timedelta
 
 router = APIRouter()
 
@@ -54,85 +53,3 @@ def login(user: auth_models.UserAuth, db: Session = Depends(database.get_db)):
         "token_type": "bearer",
         "refresh_token": refresh_token,
     }
-
-
-@router.post("/refresh-token", response_model=auth_models.Token)
-def refresh_token(
-    refresh_token_data: auth_models.RefreshTokenRequest,
-    db: Session = Depends(database.get_db),
-):
-    email = auth_handler.verify_refresh_token(refresh_token_data.refresh_token)
-    if not email:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
-
-    db_user = auth_crud.get_user_by_email(db, email=email)
-    if not db_user:
-        raise HTTPException(status_code=401, detail="User not found")
-
-    access_token = auth_handler.create_access_token(data={"sub": db_user.email})
-    refresh_token = auth_handler.create_refresh_token(data={"sub": db_user.email})
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "refresh_token": refresh_token,
-    }
-
-
-@router.post("/forgot-password")
-def forgot_password(
-    request: auth_models.ForgotPasswordRequest, db: Session = Depends(database.get_db)
-):
-    db_user = auth_crud.get_user_by_email(db, email=request.email)
-    if not db_user:
-        logger.warning(
-            f"Password reset request for non-existent email: {request.email}"
-        )
-        # Still return a success message to not reveal if an email is registered or not
-        return {
-            "message": "If an account with this email exists, a password reset link has been sent."
-        }
-
-    reset_token = auth_handler.create_password_reset_token()
-    expires_at = datetime.utcnow() + timedelta(hours=24)
-    auth_crud.create_password_reset_token(
-        db, user_id=db_user.id, token=reset_token, expires_at=expires_at
-    )
-
-    # In a real application, you would send an email here.
-    # For this example, we will log the reset link.
-    reset_link = f"http://localhost:8000/auth/reset-password?token={reset_token}"
-    logger.info(f"Password reset link for {request.email}: {reset_link}")
-
-    return {
-        "message": "If an account with this email exists, a password reset link has been sent."
-    }
-
-
-@router.post("/reset-password")
-def reset_password(
-    request: auth_models.ResetPasswordRequest, db: Session = Depends(database.get_db)
-):
-    token_data = auth_crud.get_password_reset_token_by_token(db, token=request.token)
-
-    if (
-        not token_data
-        or token_data.is_used
-        or token_data.expires_at < datetime.utcnow()
-    ):
-        raise HTTPException(
-            status_code=400, detail="Invalid or expired password reset token."
-        )
-
-    db_user = (
-        db.query(auth_crud.models.Usuario)
-        .filter(auth_crud.models.Usuario.id == token_data.user_id)
-        .first()
-    )
-    if not db_user:
-        raise HTTPException(status_code=400, detail="Invalid token.")
-
-    hashed_password = auth_handler.get_password_hash(request.new_password)
-    auth_crud.update_user_password(db, user=db_user, new_password_hash=hashed_password)
-    auth_crud.mark_password_reset_token_as_used(db, token=token_data)
-
-    return {"message": "Password has been reset successfully."}

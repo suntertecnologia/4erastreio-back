@@ -59,16 +59,23 @@ def scrap_and_save(scrap_request: entregas_models.EntregaScrapRequest, user_id: 
 
             if existing_entrega:
                 # Delivery exists, check for new movements
+                scraped_movimentos = set()
                 if scraped_data.get("historico"):
                     scraped_movimentos = {
                         get_movimento_tuple(m) for m in scraped_data["historico"]
                     }
-                    db_movimentos = {
-                        get_movimento_tuple(m) for m in existing_entrega.movimentacoes
-                    }
 
-                    if scraped_movimentos != db_movimentos:
-                        # New movements found, update delivery
+                db_movimentos = {
+                    get_movimento_tuple(m) for m in existing_entrega.movimentacoes
+                }
+
+                if scraped_movimentos != db_movimentos:
+                    # New movements found, update delivery
+                    if scraped_data.get("historico"):
+                        # This is not efficient, but it's the simplest way to update
+                        entregas_crud.delete_movimentacoes_by_entrega_id(
+                            db, existing_entrega.id
+                        )
                         entregas_crud.add_movimentacoes_to_entrega(
                             db, existing_entrega.id, scraped_data["historico"], user_id
                         )
@@ -84,10 +91,8 @@ def scrap_and_save(scrap_request: entregas_models.EntregaScrapRequest, user_id: 
                         logger.info(
                             f"Delivery {existing_entrega.id} updated with new movements."
                         )
-                    else:
-                        logger.info(
-                            f"No new movements for delivery {existing_entrega.id}."
-                        )
+                else:
+                    logger.info(f"No new movements for delivery {existing_entrega.id}.")
             else:
                 # Delivery does not exist, create it
                 entrega_data = entregas_models.EntregaCreate(

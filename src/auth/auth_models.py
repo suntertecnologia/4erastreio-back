@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
 
 
 class UserAuth(BaseModel):
@@ -12,9 +12,7 @@ class UserOut(BaseModel):
     cargo: str
     is_active: bool
 
-    class Config:
-        from_attributes = True
-        populate_by_name = True
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class Token(BaseModel):

@@ -23,7 +23,7 @@ repos:
         pass_filenames: false
     -   id: check-requirements
         name: check-requirements
-        entry: bash -c 'pip freeze > requirements.txt && git add requirements.txt'
+        entry: cmd /c "pip freeze > requirements.txt && git add requirements.txt"
         language: system
         types: [python]
         pass_filenames: false

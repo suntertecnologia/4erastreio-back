@@ -6,6 +6,10 @@ def get_user_by_email(db: Session, email: str):
     return db.query(models.Usuario).filter(models.Usuario.email == email).first()
 
 
+def get_user_by_id(db: Session, user_id: int):
+    return db.query(models.Usuario).filter(models.Usuario.id == user_id).first()
+
+
 def create_user(db: Session, email: str, username: str, hashed_password: str):
     db_user = models.Usuario(
         nome=username,
@@ -17,11 +21,4 @@ def create_user(db: Session, email: str, username: str, hashed_password: str):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    return db_user
-
-
-def delete_user(db: Session, username: str, hashed_password: str):
-    db_user = db.query(models.Usuario).filter(models.Usuario.nome == username).first()
-    db.delete(db_user)
-    db.commit()
     return db_user

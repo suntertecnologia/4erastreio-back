@@ -43,6 +43,7 @@ def scrap_and_save(scrap_request: entregas_models.EntregaScrapRequest, user_id: 
                 transportadora=scrap_request.transportadora,
                 numero_nf=scrap_request.numero_nf,
                 cnpj_destinatario=scrap_request.cnpj_destinatario,
+                credentials=scrap_request.credentials,
             )
         )
 

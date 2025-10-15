@@ -44,11 +44,9 @@ def send_notification_email(subject: str, message: str, to_email: str):
 
 
 def get_status_emoji(entrega: models.Entrega):
-    if "entregue" in entrega.status.lower():
+    if entrega.status and "entregue" in entrega.status.lower():
         return "Finalizado 🟢"
-    elif entrega.previsao_entrega and entrega.previsao_entrega < datetime.now().date():
-        return "Em atraso 🔴"
-    elif entrega.previsao_entrega > entrega.previsao_entrega_inicial:
+    if entrega.previsao_entrega and entrega.previsao_entrega < datetime.now().date():
         return "Em atraso 🔴"
     return "Em andamento 🔵"
 
@@ -76,29 +74,31 @@ def process_pending_notifications(user_id: int):
 
         now = datetime.now()
         message = "Olá, abaixo o resumo das suas entregas 🚚\n"
-        message += (
-            "-----------------------------------------------------------------\\n"
-        )
-        message += f"Status verificados em: {now.strftime("%d/%m/%Y às %H:%M")}\\n\\n"
+        message += "-----------------------------------------------------------------\n"
+        message += f"Status verificados em: {now.strftime('%d/%m/%Y às %H:%M')}\n"
 
         for carrier, deliveries in deliveries_by_carrier.items():
-            message += f"{carrier.upper()}:\\n"
+            message += f"{carrier.upper()}:\n"
             for entrega in deliveries:
-                message += f"Entrega: {entrega.codigo_rastreio}\\n"
-                message += f"Cliente: {entrega.cliente}\\n"
-                message += f"NF: {entrega.numero_nf}\\n"
-                message += f"Status: {get_status_emoji(entrega)}\\n\\n"
-                message += "Últimas movimentações\\n"
+                if entrega.codigo_rastreio:
+                    message += f"Entrega: {entrega.codigo_rastreio}\n"
+                if entrega.cliente:
+                    message += f"Cliente: {entrega.cliente}\n"
+                if entrega.numero_nf:
+                    message += f"NF: {entrega.numero_nf}\n"
+                message += f"Status: {get_status_emoji(entrega)}\n"
+                message += "Últimas movimentações\n"
                 if entrega.movimentacoes:
                     for mov in sorted(
                         entrega.movimentacoes,
-                        key=lambda m: m.dt_movimento,
+                        key=lambda m: m.dt_movimento or datetime.min,
                         reverse=True,
                     )[:2]:
-                        message += f"- {mov.movimento} | {mov.dt_movimento.strftime('%d/%m/%Y às %H:%M')}\\n"
+                        if mov.movimento and mov.dt_movimento:
+                            message += f"- {mov.movimento} | {mov.dt_movimento.strftime('%d/%m/%Y às %H:%M')}\n"
                 else:
-                    message += "Sem novas movimentações\\n"
-                message += "\\n-----------------------------------------------------------------------------------------------------------\\n\\n"
+                    message += "Sem novas movimentações\n"
+                message += "\n-----------------------------------------------------------------------------------------------------------\n"
 
         send_notification_email("Atualização de Entregas", message, SMTP_USER)
 

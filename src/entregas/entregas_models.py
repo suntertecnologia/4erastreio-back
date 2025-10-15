@@ -40,3 +40,4 @@ class EntregaScrapRequest(BaseModel):
     transportadora: str
     numero_nf: str
     cnpj_destinatario: str
+    credentials: Optional[dict] = None

@@ -4,3 +4,4 @@ trace_headless.zip
 __pycache__/
 automacao.log
 .pytest_cache
+.ruff_cache

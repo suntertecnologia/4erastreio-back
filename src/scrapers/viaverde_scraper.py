@@ -2,7 +2,6 @@ from ..configs.logger_config import logger
 from .base_scraper import BaseScraper
 from ..configs.config import SCRAPER_URLS
 from .scrapper_data_model import ScraperResponse
-from ..utils.normalize_scrap_data import normalize_viaverde
 
 
 def treat_lista_ocorrencias(ocorrencias_raw: str) -> list:
@@ -119,21 +118,4 @@ class ViaVerdeScraper(BaseScraper):
         }
 
         logger.info(f"{log_prefix} - Dados extraídos: {dados}")
-        normalized_data = normalize_viaverde(dados)
-        return self.success_response(normalized_data)
-
-
-async def rastrear_viaverde(login: str, senha: str, n_rastreio: str) -> dict:
-    """
-    Função wrapper para manter compatibilidade com código existente.
-
-    Args:
-        login: O login para acessar o sistema.
-        senha: A senha para acessar o sistema.
-        n_rastreio: O número de rastreio para a busca.
-
-    Returns:
-        Um dicionário com as informações extraídas ou uma mensagem de erro.
-    """
-    scraper = ViaVerdeScraper()
-    return await scraper.execute(login=login, senha=senha, n_rastreio=n_rastreio)
+        return self.success_response(dados)

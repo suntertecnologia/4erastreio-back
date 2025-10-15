@@ -7,6 +7,7 @@ from src.configs.logger_config import logger
 
 def scrap_and_save(scrap_request: entregas_models.EntregaScrapRequest, user_id: int):
     db: Session = database.SessionLocal()
+    message = ""
     try:
         logger.info(
             f"Starting scraping for {scrap_request.transportadora} - NF {scrap_request.numero_nf}"
@@ -14,15 +15,15 @@ def scrap_and_save(scrap_request: entregas_models.EntregaScrapRequest, user_id: 
 
         import asyncio
 
-        scraped_results = asyncio.run(
+        scraped_data = asyncio.run(
             runner.run_scraper(
                 transportadora=scrap_request.transportadora,
                 numero_nf=scrap_request.numero_nf,
                 cnpj_destinatario=scrap_request.cnpj_destinatario,
             )
         )
-        scraped_data = scraped_results["dados"]
-        if scraped_data["informacoes_gerais"]:
+
+        if scraped_data and scraped_data.get("informacoes_gerais"):
             logger.info(
                 f"Scraping successful for {scrap_request.transportadora} - NF {scrap_request.numero_nf}. Data: {scraped_data}"
             )
@@ -32,8 +33,8 @@ def scrap_and_save(scrap_request: entregas_models.EntregaScrapRequest, user_id: 
                 transportadora=info["transportadora"],
                 codigo_rastreio=info["codigo_rastreio"],
                 numero_nf=info["numero_nf"],
-                cliente=info["destinatario"],
-                cnpj_destinatario=info["cnpj_destinatario"],
+                cliente=info.get("destinatario"),
+                cnpj_destinatario=info.get("cnpj_destinatario"),
                 status=(
                     scraped_data["historico"][0]["status"]
                     if scraped_data.get("historico")
@@ -44,17 +45,14 @@ def scrap_and_save(scrap_request: entregas_models.EntregaScrapRequest, user_id: 
             )
 
             entregas_crud.create_entrega(db=db, entrega=entrega_data, user_id=user_id)
-            logger.info(
-                f"Successfully saved scraped data for {scrap_request.transportadora} - NF {scrap_request.numero_nf}"
-            )
+            message = f"Scraping for {scrap_request.transportadora} - NF {scrap_request.numero_nf} completed successfully."
+            logger.info(message)
         else:
-            logger.error(
-                f"Scraping failed for {scrap_request.transportadora} - NF {scrap_request.numero_nf}: {scraped_data.get('erro')}"
-            )
+            message = f"Scraping failed for {scrap_request.transportadora} - NF {scrap_request.numero_nf}: {scraped_data.get('erro')}"
+            logger.error(message)
 
     except Exception as e:
-        logger.error(
-            f"An error occurred during the scrap and save process: {e}", exc_info=True
-        )
+        message = f"An error occurred during the scrap and save process: {e}"
+        logger.error(message, exc_info=True)
     finally:
         db.close()

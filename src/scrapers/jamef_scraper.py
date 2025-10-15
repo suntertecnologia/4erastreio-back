@@ -1,10 +1,8 @@
-import asyncio
 import regex as re
 from ..configs.logger_config import logger
 from .base_scraper import BaseScraper
 from ..configs.config import SCRAPER_URLS, TIMEOUTS
 from .scrapper_data_model import ScraperResponse
-from ..utils.normalize_scrap_data import normalize_jamef
 
 
 class JamefScraper(BaseScraper):
@@ -73,39 +71,4 @@ class JamefScraper(BaseScraper):
         # Retornar dados estruturados
         dados = {"detalhes": detalhes_texto.strip()}
         logger.info(f"{log_prefix} - Dados extraídos: {dados}")
-        normalized_data = normalize_jamef(dados)
-        return self.success_response(normalized_data)
-
-
-async def rastrear_jamef(cnpj: str, nota_fiscal: str) -> dict:
-    """
-    Função wrapper para manter compatibilidade com código existente.
-
-    Args:
-        cnpj: O CNPJ do remetente para a busca.
-        nota_fiscal: O número da nota fiscal para a busca.
-
-    Returns:
-        Um dicionário com as informações extraídas ou uma mensagem de erro.
-    """
-    scraper = JamefScraper()
-    return await scraper.execute(cnpj=cnpj, nota_fiscal=nota_fiscal)
-
-
-async def main():
-    # --- DADOS DE EXEMPLO ---
-    # Substitua com um CNPJ e Nota Fiscal reais para testar
-    cnpj_exemplo = "48.775.1910001-90"
-    nota_fiscal_exemplo = "1160274"
-    resultado = await rastrear_jamef(cnpj_exemplo, nota_fiscal_exemplo)
-
-    print("\n--- RESULTADO DO RASTREAMENTO ---")
-    if resultado["status"] == "sucesso":
-        print(resultado["dados"])
-    else:
-        print(f"Falha no rastreamento: {resultado['erro']}")
-    print("---------------------------------")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+        return self.success_response(dados)

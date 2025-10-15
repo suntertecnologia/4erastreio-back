@@ -65,6 +65,27 @@ class Entrega(Base):
     )
 
 
+class NotificacaoLog(Base):
+    __tablename__ = "notificacoes_log"
+
+    id = Column(Integer, primary_key=True)
+    detalhes = Column(Text, nullable=False)
+    status = Column(String(50), nullable=False)
+    criado_em = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    criado_por_id = Column(Integer, ForeignKey("usuarios.id"))
+    entrega_id = Column(Integer, ForeignKey("entregas.id"))
+
+
+class MovimentacaoNotificacao(Base):
+    __tablename__ = "movimentacao_notificacao"
+
+    id = Column(Integer, primary_key=True)
+    entrega_id = Column(Integer, ForeignKey("entregas.id"), nullable=False)
+    notificacao_id = Column(Integer, ForeignKey("notificacoes_log.id"))
+    status = Column(String(50), nullable=False, default="nao notificado")
+    criado_em = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+
+
 class EntregaMovimentacao(Base):
     __tablename__ = "entrega_movimentacoes"
 

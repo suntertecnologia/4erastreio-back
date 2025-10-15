@@ -2,7 +2,6 @@ from ..configs.logger_config import logger
 from .base_scraper import BaseScraper
 from ..configs.config import SCRAPER_URLS, TIMEOUTS
 from .scrapper_data_model import ScraperResponse
-from ..utils.normalize_scrap_data import normalize_accert
 
 
 class AccertScraper(BaseScraper):
@@ -62,21 +61,4 @@ class AccertScraper(BaseScraper):
         dados = {"detalhes": detalhes_texto.strip()}
 
         logger.info(f"{log_prefix} - Dados extraídos: {dados}")
-        normalized_data = normalize_accert(dados, cnpj, nota_fiscal)
-        logger.info(f"{log_prefix} - Dados normais: {normalized_data}")
-        return self.success_response(normalized_data)
-
-
-async def rastrear_accert(cnpj: str, nota_fiscal: str) -> dict:
-    """
-    Função wrapper para manter compatibilidade com código existente.
-
-    Args:
-        cnpj: O CNPJ do remetente para a busca.
-        nota_fiscal: O número da nota fiscal para a busca.
-
-    Returns:
-        Um dicionário com as informações extraídas ou uma mensagem de erro.
-    """
-    scraper = AccertScraper()
-    return await scraper.execute(cnpj=cnpj, nota_fiscal=nota_fiscal)
+        return self.success_response(dados)

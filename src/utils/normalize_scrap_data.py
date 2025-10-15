@@ -9,11 +9,9 @@ def normalize_braspress(data, cnpj, nota_fiscal):
     if not data or "historico_detalhado" not in data:
         return None
 
-    # Remove duplicates from the history
     unique_history = []
     seen = set()
     for item in data["historico_detalhado"]:
-        # Create a tuple of the dictionary's items to make it hashable
         item_tuple = tuple(item.items())
         if item_tuple not in seen:
             unique_history.append(item)
@@ -22,11 +20,9 @@ def normalize_braspress(data, cnpj, nota_fiscal):
     if not unique_history:
         return None
 
-    # Get post date from the first event in the history
     post_date_str = unique_history[0]["timestamp"].split(" ")[0]
     post_date = datetime.strptime(post_date_str, "%d/%m/%Y").strftime("%Y-%m-%d")
 
-    # Get delivery forecast from the last event if it's a delivery
     last_event = unique_history[-1]
     previsao_entrega = None
     if "ENTREGA REALIZADA" in last_event["status"]:
@@ -49,7 +45,6 @@ def normalize_braspress(data, cnpj, nota_fiscal):
                 estado = location_parts[1].strip()
                 local = {"cidade": cidade, "estado": estado}
 
-        # Convert timestamp to ISO format
         timestamp_obj = datetime.strptime(item["timestamp"], "%d/%m/%Y %H:%M")
         timestamp_iso = timestamp_obj.isoformat()
 
@@ -68,10 +63,10 @@ def normalize_braspress(data, cnpj, nota_fiscal):
             "codigo_rastreio": nota_fiscal,
             "numero_nf": nota_fiscal,
             "previsao_entrega": previsao_entrega,
-            "cnpj_destinatario": cnpj,
             "data_postagem": post_date,
             "remetente": None,
             "destinatario": None,
+            "cnpj_destinatario": cnpj,
         },
         "historico": normalized_history,
         "erro": None,
@@ -87,7 +82,6 @@ def normalize_accert(data, cnpj, nota_fiscal):
 
     details_str = data["detalhes"]
 
-    # Extract previsao_entrega
     previsao_match = re.search(r"Previsão de entrega: (\d{2}/\d{2}/\d{2})", details_str)
     previsao_entrega = None
     if previsao_match:
@@ -96,7 +90,6 @@ def normalize_accert(data, cnpj, nota_fiscal):
             "%Y-%m-%d"
         )
 
-    # Extract history
     history_blocks = re.findall(
         r"(\d{2}/\d{2} \d{2}:\d{2})\n\n(.*?)\n\n(.*?)(?=\n\n\d{2}/\d{2} \d{2}:\d{2}|$)",
         details_str,
@@ -110,14 +103,13 @@ def normalize_accert(data, cnpj, nota_fiscal):
             f"{timestamp_str}/{datetime.now().year}", "%d/%m %H:%M/%Y"
         ).isoformat()
 
-        # Extract location from details if possible
         local = None
         location_match = re.search(r"na cidade de (.*?)\\.", details)
         if not location_match:
             location_match = re.search(r"unidade (.*?)(?: em| na)", details)
         if location_match:
             cidade = location_match.group(1).strip()
-            local = {"cidade": cidade, "estado": None}  # State is not available
+            local = {"cidade": cidade, "estado": None}
 
         normalized_history.append(
             {
@@ -150,7 +142,7 @@ def normalize_accert(data, cnpj, nota_fiscal):
     }
 
 
-def normalize_viaverde(data, cnpj):
+def normalize_viaverde(data, cnpj, nota_fiscal):
     """
     Normalizes the data scraped from Via Verde.
     """
@@ -163,14 +155,14 @@ def normalize_viaverde(data, cnpj):
             "%Y-%m-%d"
         )
 
-    post_date = None  # Not available in the provided data
+    post_date = None
 
     normalized_history = []
     if "ocorrencias" in data:
         for item in data["ocorrencias"]:
             normalized_history.append(
                 {
-                    "timestamp": None,  # Timestamp is not available
+                    "timestamp": None,
                     "status": item["status"],
                     "local": item["local"],
                     "detalhes": item["detalhes"],
@@ -184,8 +176,9 @@ def normalize_viaverde(data, cnpj):
             "numero_nf": data.get("n_notafiscal"),
             "previsao_entrega": previsao_entrega,
             "data_postagem": post_date,
-            "remetente": {"nome": data.get("remetente"), "cnpj": None},
-            "destinatario": {"nome": data.get("destinatario"), "cnpj": None},
+            "remetente": None,
+            "destinatario": None,
+            "cnpj_destinatario": cnpj,
         },
         "historico": normalized_history,
         "erro": None,
@@ -215,7 +208,7 @@ def normalize_jamef(data, cnpj, nota_fiscal):
         local = {
             "cidade": cidade_destino.strip(),
             "estado": None,
-        }  # State is not available
+        }
 
         normalized_history.append(
             {
@@ -241,12 +234,13 @@ def normalize_jamef(data, cnpj, nota_fiscal):
     return {
         "informacoes_gerais": {
             "transportadora": "JAMEF",
-            "codigo_rastreio": None,
-            "numero_nf": None,
+            "codigo_rastreio": nota_fiscal,
+            "numero_nf": nota_fiscal,
             "previsao_entrega": previsao_entrega,
             "data_postagem": post_date,
             "remetente": None,
             "destinatario": None,
+            "cnpj_destinatario": cnpj,
         },
         "historico": normalized_history,
         "erro": None,

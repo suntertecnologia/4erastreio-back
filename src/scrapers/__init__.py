@@ -10,10 +10,10 @@ from ..configs.config import BROWSER_CONFIG, TIMEOUTS, SCRAPER_URLS
 from .scrapper_data_model import ScraperResponse, ErrorInfo
 
 # Import scraper classes
-from .accert_scraper import AccertScraper, rastrear_accert
-from .jamef_scraper import JamefScraper, rastrear_jamef
-from .braspress_scraper import BrasspressScraper, rastrear_braspress
-from .viaverde_scraper import ViaVerdeScraper, rastrear_viaverde
+from .accert_scraper import AccertScraper
+from .jamef_scraper import JamefScraper
+from .braspress_scraper import BrasspressScraper
+from .viaverde_scraper import ViaVerdeScraper
 
 __all__ = [
     # Base classes and utilities
@@ -28,9 +28,4 @@ __all__ = [
     "JamefScraper",
     "BrasspressScraper",
     "ViaVerdeScraper",
-    # Legacy functions for backward compatibility
-    "rastrear_accert",
-    "rastrear_jamef",
-    "rastrear_braspress",
-    "rastrear_viaverde",
 ]

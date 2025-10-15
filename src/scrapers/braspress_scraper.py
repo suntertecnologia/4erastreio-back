@@ -4,7 +4,6 @@ from playwright.async_api import Page
 from .base_scraper import BaseScraper
 from ..configs.config import SCRAPER_URLS, TIMEOUTS
 from .scrapper_data_model import ScraperResponse
-from ..utils.normalize_scrap_data import normalize_braspress
 
 
 async def _parse_detailed_history(page: Page) -> list[dict]:
@@ -138,20 +137,4 @@ class BrasspressScraper(BaseScraper):
         }
 
         logger.info(f"{log_prefix} - Dados extraídos: {dados}")
-        normalized_data = normalize_braspress(dados)
-        return self.success_response(normalized_data)
-
-
-async def rastrear_braspress(cnpj: str, nota_fiscal: str) -> dict:
-    """
-    Função wrapper para manter compatibilidade com código existente.
-
-    Args:
-        cnpj: O CNPJ do remetente para a busca.
-        nota_fiscal: O número da nota fiscal para a busca.
-
-    Returns:
-        Um dicionário com as informações extraídas ou uma mensagem de erro.
-    """
-    scraper = BrasspressScraper()
-    return await scraper.execute(cnpj=cnpj, nota_fiscal=nota_fiscal)
+        return self.success_response(dados)

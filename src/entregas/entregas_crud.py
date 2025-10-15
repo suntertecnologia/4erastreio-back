@@ -22,10 +22,23 @@ def get_entrega_by_tracking_info(
 
 
 def create_entrega(db: Session, entrega: entregas_models.EntregaCreate, user_id: int):
+
     db_entrega = models.Entrega(**entrega.dict(), criado_por_id=user_id)
+
     db.add(db_entrega)
+
     db.commit()
+
     db.refresh(db_entrega)
+
+    db_movimentacao = models.MovimentacaoNotificacao(
+        entrega_id=db_entrega.id,
+    )
+
+    db.add(db_movimentacao)
+
+    db.commit()
+
     return db_entrega
 
 

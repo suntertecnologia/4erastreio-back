@@ -62,7 +62,8 @@ class AccertScraper(BaseScraper):
         dados = {"detalhes": detalhes_texto.strip()}
 
         logger.info(f"{log_prefix} - Dados extraídos: {dados}")
-        normalized_data = normalize_accert(dados)
+        normalized_data = normalize_accert(dados, cnpj, nota_fiscal)
+        logger.info(f"{log_prefix} - Dados normais: {normalized_data}")
         return self.success_response(normalized_data)
 
 

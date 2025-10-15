@@ -15,11 +15,10 @@ async def run_scraper(transportadora: str, numero_nf: str, cnpj_destinatario: st
     """
     Dynamically selects and runs a scraper based on the transportadora name.
     """
+
     scraper_class = SCRAPERS.get(transportadora.lower())
     if not scraper_class:
         raise ValueError(f"Transportadora '{transportadora}' not supported.")
 
     scraper = scraper_class()
-    return await scraper.execute(
-        numero_nf=numero_nf, cnpj_destinatario=cnpj_destinatario
-    )
+    return await scraper.execute(nota_fiscal=numero_nf, cnpj=cnpj_destinatario)

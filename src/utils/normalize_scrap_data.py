@@ -2,7 +2,7 @@ from datetime import datetime
 import re
 
 
-def normalize_braspress(data):
+def normalize_braspress(data, cnpj, nota_fiscal):
     """
     Normalizes the data scraped from Braspress.
     """
@@ -65,9 +65,10 @@ def normalize_braspress(data):
     return {
         "informacoes_gerais": {
             "transportadora": "BRASPRESS",
-            "codigo_rastreio": None,
-            "numero_nf": None,
+            "codigo_rastreio": nota_fiscal,
+            "numero_nf": nota_fiscal,
             "previsao_entrega": previsao_entrega,
+            "cnpj_destinatario": cnpj,
             "data_postagem": post_date,
             "remetente": None,
             "destinatario": None,
@@ -77,7 +78,7 @@ def normalize_braspress(data):
     }
 
 
-def normalize_accert(data):
+def normalize_accert(data, cnpj, nota_fiscal):
     """
     Normalizes the data scraped from Accert.
     """
@@ -136,19 +137,20 @@ def normalize_accert(data):
     return {
         "informacoes_gerais": {
             "transportadora": "ACCERT",
-            "codigo_rastreio": None,
-            "numero_nf": None,
+            "codigo_rastreio": nota_fiscal,
+            "numero_nf": nota_fiscal,
             "previsao_entrega": previsao_entrega,
             "data_postagem": post_date,
             "remetente": None,
             "destinatario": None,
+            "cnpj_destinatario": cnpj,
         },
         "historico": normalized_history,
         "erro": None,
     }
 
 
-def normalize_viaverde(data):
+def normalize_viaverde(data, cnpj):
     """
     Normalizes the data scraped from Via Verde.
     """
@@ -190,7 +192,7 @@ def normalize_viaverde(data):
     }
 
 
-def normalize_jamef(data):
+def normalize_jamef(data, cnpj, nota_fiscal):
     """
     Normalizes the data scraped from Jamef.
     """

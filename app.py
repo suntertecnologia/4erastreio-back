@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from src.auth import auth_routes
+from src.entregas import entregas_routes
 from src.db import models
 from src.db.database import engine
 from src.scrapers.scrapper_data_model import StandardizedDeliveryData
@@ -10,6 +11,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 app.include_router(auth_routes.router, prefix="/auth")
+app.include_router(entregas_routes.router, prefix="/entrega")
 
 
 @app.get("/")

@@ -9,6 +9,7 @@ from sqlalchemy import (
     Date,
     Text,
     ForeignKey,
+    Boolean,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -28,6 +29,7 @@ class Usuario(Base):
     email = Column(String(255), unique=True, nullable=False)
     senha_hash = Column(String(255), nullable=False)
     cargo = Column(String(50), nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
 
     # Timestamps com valor padrão
     criado_em = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)

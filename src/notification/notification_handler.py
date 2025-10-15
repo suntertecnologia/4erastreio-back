@@ -5,8 +5,10 @@ from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from src.notification import notification_crud
-from src.db import database
+from src.db import database, models
 from src.configs.logger_config import logger
+from datetime import datetime
+from collections import defaultdict
 
 
 def send_notification_email(subject: str, message: str, to_email: str):
@@ -34,18 +36,27 @@ def send_notification_email(subject: str, message: str, to_email: str):
         server.starttls()
         server.login(SMTP_USER, SMTP_PASSWORD)
         text = msg.as_string()
-        logger.info(f"Sending email to {to_email}...")
-        server.sendmail(from_addr=SMTP_USER, to_addrs=to_email, msg=text)
+        server.sendmail(SMTP_USER, to_email, text)
         server.quit()
         logger.info(f"Email sent successfully to {to_email}")
     except Exception as e:
         logger.error(f"Error sending email: {e}")
 
 
+def get_status_emoji(entrega: models.Entrega):
+    if "entregue" in entrega.status.lower():
+        return "Finalizado 🟢"
+    elif entrega.previsao_entrega and entrega.previsao_entrega < datetime.now().date():
+        return "Em atraso 🔴"
+    elif entrega.previsao_entrega > entrega.previsao_entrega_inicial:
+        return "Em atraso 🔴"
+    return "Em andamento 🔵"
+
+
 def process_pending_notifications(user_id: int):
     """Processes all pending notifications."""
     load_dotenv()
-    TO_EMAIL = os.getenv("SMTP_USER")
+    SMTP_USER = os.getenv("SMTP_USER")
     db: Session = database.SessionLocal()
     try:
         pending_notifications = notification_crud.get_pending_notifications(db)
@@ -53,11 +64,43 @@ def process_pending_notifications(user_id: int):
             logger.info("No pending notifications to process.")
             return
 
-        message = ""
+        deliveries_by_carrier = defaultdict(list)
         for mov in pending_notifications:
-            message += f"Entrega ID: {mov.entrega_id} - Status: {mov.status}\n"
+            entrega = (
+                db.query(models.Entrega)
+                .filter(models.Entrega.id == mov.entrega_id)
+                .first()
+            )
+            if entrega:
+                deliveries_by_carrier[entrega.transportadora].append(entrega)
 
-        send_notification_email("Atualização de Entregas", message, TO_EMAIL)
+        now = datetime.now()
+        message = "Olá, abaixo o resumo das suas entregas 🚚\n"
+        message += (
+            "-----------------------------------------------------------------\\n"
+        )
+        message += f"Status verificados em: {now.strftime("%d/%m/%Y às %H:%M")}\\n\\n"
+
+        for carrier, deliveries in deliveries_by_carrier.items():
+            message += f"{carrier.upper()}:\\n"
+            for entrega in deliveries:
+                message += f"Entrega: {entrega.codigo_rastreio}\\n"
+                message += f"Cliente: {entrega.cliente}\\n"
+                message += f"NF: {entrega.numero_nf}\\n"
+                message += f"Status: {get_status_emoji(entrega)}\\n\\n"
+                message += "Últimas movimentações\\n"
+                if entrega.movimentacoes:
+                    for mov in sorted(
+                        entrega.movimentacoes,
+                        key=lambda m: m.dt_movimento,
+                        reverse=True,
+                    )[:2]:
+                        message += f"- {mov.movimento} | {mov.dt_movimento.strftime('%d/%m/%Y às %H:%M')}\\n"
+                else:
+                    message += "Sem novas movimentações\\n"
+                message += "\\n-----------------------------------------------------------------------------------------------------------\\n\\n"
+
+        send_notification_email("Atualização de Entregas", message, SMTP_USER)
 
         log = notification_crud.create_notification_log(
             db, detalhes=message, status="enviado", entrega_id=None, user_id=user_id

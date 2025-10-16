@@ -1,9 +1,10 @@
+import uuid
 from fastapi import Depends, HTTPException, status, BackgroundTasks, APIRouter
 from sqlalchemy.orm import Session
 from src.entregas import entregas_crud, entregas_models
 from src.db import database
 from src.auth.auth_handler import get_current_user
-from src.db.models import Usuario
+from src.db.models import Usuario, ScrapingTask  # Import ScrapingTask
 from src.entregas.entregas_handler import scrap_and_save
 
 router = APIRouter()
@@ -13,10 +14,38 @@ router = APIRouter()
 def scrap_entrega(
     scrap_request: entregas_models.EntregaScrapRequest,
     background_tasks: BackgroundTasks,
+    db: Session = Depends(database.get_db),  # Add db session
     current_user: Usuario = Depends(get_current_user),
 ):
-    background_tasks.add_task(scrap_and_save, scrap_request, current_user.id)
-    return {"message": "Scraping process initiated in the background."}
+    task_id = str(uuid.uuid4())
+    # Create a pending task in the database
+    db_task = ScrapingTask(task_id=task_id, status="PENDING")
+    db.add(db_task)
+    db.commit()
+    db.refresh(db_task)
+
+    background_tasks.add_task(scrap_and_save, scrap_request, current_user.id, task_id)
+    return {
+        "message": "Scraping process initiated in the background.",
+        "task_id": task_id,
+    }
+
+
+@router.get("/scrap/status/{task_id}")
+def get_scraping_status(
+    task_id: str,
+    db: Session = Depends(database.get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    task = db.query(ScrapingTask).filter(ScrapingTask.task_id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Scraping task not found")
+    return {
+        "task_id": task.task_id,
+        "status": task.status,
+        "entrega_id": task.entrega_id,
+        "error_message": task.error_message,
+    }
 
 
 @router.post(

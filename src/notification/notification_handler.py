@@ -44,10 +44,7 @@ def send_notification_email(subject: str, message: str, to_email: str):
 
 
 def get_status_emoji(entrega: models.Entrega):
-    if entrega.status and (
-        "entregue" in entrega.status.lower()
-        or "entrega realizada" in entrega.status.lower()
-    ):
+    if entrega.status and ("entregue" in entrega.status.lower()):
         return "Entregue 🟢"
     elif entrega.previsao_entrega or entrega.previsao_entrega < datetime.now().date():
         return "Em atraso 🔴"

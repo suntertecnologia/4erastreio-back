@@ -108,23 +108,41 @@ class EntregaMovimentacao(Base):
     atualizado_por_id = Column(Integer, ForeignKey("usuarios.id"))
 
 
+class ScrapingTask(Base):
+    __tablename__ = "scraping_tasks"
+
+    id = Column(Integer, primary_key=True)
+    task_id = Column(String(255), unique=True, nullable=False, index=True)
+    status = Column(
+        String(50), nullable=False, default="PENDING"
+    )  # PENDING, SUCCESS, FAILED
+    entrega_id = Column(Integer, ForeignKey("entregas.id"), nullable=True)
+    error_message = Column(Text, nullable=True)
+    created_at = Column(
+        DateTime(timezone=True), default=datetime.utcnow, nullable=False
+    )
+    updated_at = Column(DateTime(timezone=True), onupdate=datetime.utcnow)
+
+
 # As tabelas de notificação podem ser adicionadas de forma similar se necessário...
 
 # --- COMO USAR (Exemplo) ---
 
 # 1. Configurar a conexão com o banco de dados
 #    (Isso geralmente fica em um arquivo de configuração)
-DATABASE_URL = "postgresql://seu_usuario:sua_senha@localhost/seu_banco"
-engine = create_engine(DATABASE_URL)
+# DATABASE_URL = "postgresql://seu_usuario:sua_senha@localhost/seu_banco"
+# engine = create_engine(DATABASE_URL)
 
 
 # 2. Criar todas as tabelas no banco de dados
 #    (Você só executa isso uma vez na configuração inicial)
-def criar_tabelas():
+def criar_tabelas(engine):
     Base.metadata.create_all(engine)
     print("Tabelas criadas com sucesso!")
 
 
 if __name__ == "__main__":
     # Este bloco permite que você execute `python models.py` para criar o banco
-    criar_tabelas()
+    # Usando SQLite para o exemplo de criação de tabelas
+    sqlite_engine = create_engine("sqlite:///./test.db")
+    criar_tabelas(sqlite_engine)

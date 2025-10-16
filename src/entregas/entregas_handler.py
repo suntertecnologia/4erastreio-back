@@ -4,6 +4,7 @@ from src.db import database
 from src.scrapers import runner
 from src.configs.logger_config import logger
 from datetime import datetime
+from src.db.models import ScrapingTask  # Import ScrapingTask
 
 
 def get_movimento_tuple(movimento):
@@ -29,12 +30,21 @@ def get_movimento_tuple(movimento):
         )
 
 
-def scrap_and_save(scrap_request: entregas_models.EntregaScrapRequest, user_id: int):
+def scrap_and_save(
+    scrap_request: entregas_models.EntregaScrapRequest, user_id: int, task_id: str
+):
     db: Session = database.SessionLocal()
     try:
         logger.info(
-            f"Starting scraping for {scrap_request.transportadora} - NF {scrap_request.numero_nf}"
+            f"Starting scraping for {scrap_request.transportadora} - NF {scrap_request.numero_nf} (Task ID: {task_id})"
         )
+        # Update task status to IN_PROGRESS (optional, PENDING is fine for start)
+        db_task = db.query(ScrapingTask).filter(ScrapingTask.task_id == task_id).first()
+        if db_task:
+            db_task.status = "IN_PROGRESS"
+            db.add(db_task)
+            db.commit()
+            db.refresh(db_task)
 
         import asyncio
 
@@ -57,8 +67,10 @@ def scrap_and_save(scrap_request: entregas_models.EntregaScrapRequest, user_id: 
                 db, info["transportadora"], info["numero_nf"]
             )
 
+            entrega_id = None
             if existing_entrega:
                 logger.info("Entrega já existe")
+                entrega_id = existing_entrega.id
                 # Delivery exists, check for new movements
                 scraped_movimentos = set()
                 if scraped_data.get("historico"):
@@ -83,7 +95,7 @@ def scrap_and_save(scrap_request: entregas_models.EntregaScrapRequest, user_id: 
                         new_status = existing_entrega.status
                         if scraped_data.get("historico"):
                             has_entregue = any(
-                                ("entregue" or "entegra realizada")
+                                ("entregue" or "entrega realizada")
                                 in m.get("status", "").lower()
                                 for m in scraped_data["historico"]
                             )
@@ -116,19 +128,38 @@ def scrap_and_save(scrap_request: entregas_models.EntregaScrapRequest, user_id: 
                     previsao_entrega_inicial=info.get("previsao_entrega"),
                     historico=scraped_data.get("historico"),
                 )
-                entregas_crud.create_entrega(
+                new_entrega = entregas_crud.create_entrega(
                     db=db, entrega=entrega_data, user_id=user_id
                 )
+                entrega_id = new_entrega.id
                 logger.info("New delivery created.")
 
+            # Update task status to SUCCESS
+            if db_task:
+                db_task.status = "SUCCESS"
+                db_task.entrega_id = entrega_id
+                db.add(db_task)
+                db.commit()
+                db.refresh(db_task)
+
         else:
-            logger.error(
-                f"Scraping failed for {scrap_request.transportadora} - NF {scrap_request.numero_nf}: {scraped_data.get('erro')}"
-            )
+            error_msg = f"Scraping failed for {scrap_request.transportadora} - NF {scrap_request.numero_nf}: {scraped_data.get('erro')}"
+            logger.error(error_msg)
+            if db_task:
+                db_task.status = "FAILED"
+                db_task.error_message = error_msg
+                db.add(db_task)
+                db.commit()
+                db.refresh(db_task)
 
     except Exception as e:
-        logger.error(
-            f"An error occurred during the scrap and save process: {e}", exc_info=True
-        )
+        error_msg = f"An error occurred during the scrap and save process (Task ID: {task_id}): {e}"
+        logger.error(error_msg, exc_info=True)
+        if db_task:
+            db_task.status = "FAILED"
+            db_task.error_message = error_msg
+            db.add(db_task)
+            db.commit()
+            db.refresh(db_task)
     finally:
         db.close()

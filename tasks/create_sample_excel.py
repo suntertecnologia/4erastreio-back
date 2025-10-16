@@ -12,7 +12,8 @@ def ler_planilha() -> pd.DataFrame:
     try:
         logger.info(f"Lendo planilha de entregas de: {CAMINHO_PLANILHA_ENTREGAS}")
         df = pd.read_excel(CAMINHO_PLANILHA_ENTREGAS, header=1)
-        df = df[["TRANSPORTADORAS", "CNPJ CONSULTA", "NOTAS"]].dropna()
+        print(df)
+        df = df[["TRANSPORTADORAS", "CNPJ CONSULTA", "NOTAS"]]
         df = df.rename(
             columns={
                 "CNPJ CONSULTA": "cnpj_destinatario",
@@ -21,7 +22,12 @@ def ler_planilha() -> pd.DataFrame:
             }
         )
 
-        df["transportadora"].apply(lambda x: x.lower())  # Lowercase in transportadora
+        df["transportadora"] = df["transportadora"].apply(
+            lambda x: x.lower()
+        )  # Lowercase in transportadora
+        df["transportadora"] = df["transportadora"].apply(
+            lambda x: x.replace(" ", "")
+        )  # Remove whitespace
 
         logger.info(f"Encontradas {len(df)} entregas para processar.")
         return df
@@ -31,3 +37,6 @@ def ler_planilha() -> pd.DataFrame:
             f"ERRO CRÍTICO: Planilha não encontrada em '{CAMINHO_PLANILHA_ENTREGAS}'. Abortando execução."
         )
         return pd.DataFrame()
+
+
+print(ler_planilha())

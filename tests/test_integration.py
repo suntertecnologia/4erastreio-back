@@ -1,23 +1,19 @@
 # import requests
 # import time
 # import logging
+# from src.configs.logger_config import logger
 # from sqlalchemy import create_engine
 # from sqlalchemy.orm import sessionmaker
 # from src.db.models import Usuario
+# from src.db import database
+# from sqlalchemy.orm import Session
 
 # BASE_URL = "http://127.0.0.1:8000"
 # SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
-# engine = create_engine(
-#     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-# )
-# TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-# logger = logging.getLogger(__name__)
-
 
 # def test_integration():
+#     db: Session = database.SessionLocal()
 #     headers = {}
 #     try:
 #         # 1. Create a user
@@ -71,15 +67,9 @@
 #         )
 #         response.raise_for_status()
 
-#         # 5. Check log file for email success message
-#         logger.info("Waiting for email to be sent...")
-#         time.sleep(10)  # Increased wait time
-#         logger.info("Checking log file...")
-
 #     finally:
 #         # 6. Cleanup
 #         # logger.info(f"Cleaning up user {user_id}...")
-#         db = TestingSessionLocal()
 #         user = (
 #             db.query(Usuario).filter(Usuario.email == "shrekshrugers@gmail.com").first()
 #         )

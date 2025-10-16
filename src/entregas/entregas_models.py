@@ -9,9 +9,8 @@ class EntregaBase(BaseModel):
     numero_nf: str
     cliente: Optional[str] = None
     cnpj_destinatario: Optional[str] = None
-    status: Optional[str] = None
-    previsao_entrega_inicial: Optional[date] = None
-    previsao_entrega: Optional[date] = None
+    previsao_entrega_inicial: date
+    previsao_entrega: date
 
 
 class EntregaCreate(EntregaBase):
@@ -31,7 +30,7 @@ class EntregaUpdate(BaseModel):
 
 class EntregaOut(EntregaBase):
     id: int
-
+    status: str
     model_config = ConfigDict(from_attributes=True)
 
 

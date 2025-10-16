@@ -58,6 +58,7 @@ def scrap_and_save(scrap_request: entregas_models.EntregaScrapRequest, user_id: 
             )
 
             if existing_entrega:
+                logger.info("Entrega já existe")
                 # Delivery exists, check for new movements
                 scraped_movimentos = set()
                 if scraped_data.get("historico"):
@@ -79,9 +80,19 @@ def scrap_and_save(scrap_request: entregas_models.EntregaScrapRequest, user_id: 
                         entregas_crud.add_movimentacoes_to_entrega(
                             db, existing_entrega.id, scraped_data["historico"], user_id
                         )
-                        update_data = entregas_models.EntregaUpdate(
-                            status=scraped_data["historico"][0]["status"]
-                        )
+                        new_status = existing_entrega.status
+                        if scraped_data.get("historico"):
+                            has_entregue = any(
+                                ("entregue" or "entegra realizada")
+                                in m.get("status", "").lower()
+                                for m in scraped_data["historico"]
+                            )
+                            if has_entregue:
+                                new_status = "entregue"
+                            else:
+                                new_status = scraped_data["historico"][0]["status"]
+
+                        update_data = entregas_models.EntregaUpdate(status=new_status)
                         entregas_crud.update_entrega(
                             db, existing_entrega.id, update_data, user_id
                         )
@@ -101,12 +112,8 @@ def scrap_and_save(scrap_request: entregas_models.EntregaScrapRequest, user_id: 
                     numero_nf=info["numero_nf"],
                     cliente=info.get("destinatario"),
                     cnpj_destinatario=info.get("cnpj_destinatario"),
-                    status=(
-                        scraped_data["historico"][0]["status"]
-                        if scraped_data.get("historico")
-                        else "Desconhecido"
-                    ),
                     previsao_entrega=info.get("previsao_entrega"),
+                    previsao_entrega_inicial=info.get("previsao_entrega"),
                     historico=scraped_data.get("historico"),
                 )
                 entregas_crud.create_entrega(

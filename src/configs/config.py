@@ -40,3 +40,13 @@ SCREENSHOT_ENABLED = True  # Habilita/desabilita a captura de tela em caso de er
 SCREENSHOT_DIR = "debug_screenshots"  # Diretório para salvar as capturas de tela
 
 # ------------------
+
+# --- Orchestrator Configurations ---
+ORCHESTRATOR_USER_EMAIL = "shrekshrugers@shrekshrugers.com"
+ORCHESTRATOR_USER_PASSWORD = "123"
+TENTATIVAS_MAXIMAS = 3
+DELAY_ENTRE_TENTATIVAS_SEGUNDOS = 5
+CAMINHO_PLANILHA_ENTREGAS = "entregas.xlsx"
+BASE_URL = "http://127.0.0.1:8000"
+ENDPOINT_SCRAPING = f"{BASE_URL}/entrega/scrap"
+ENDPOINT_NOTIFICACAO = f"{BASE_URL}/notification/send-notifications"

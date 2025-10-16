@@ -36,13 +36,20 @@ def get_entrega_by_transportadora_and_nf(
 
 
 def create_entrega(db: Session, entrega: entregas_models.EntregaCreate, user_id: int):
+    status = "em andamento"
+    if entrega.historico:
+        for movimento in entrega.historico:
+            if "entregue" in movimento.get("status", "").lower():
+                status = "entregue"
+                break
+
     db_entrega = models.Entrega(
         transportadora=entrega.transportadora,
         codigo_rastreio=entrega.codigo_rastreio,
         numero_nf=entrega.numero_nf,
         cliente=entrega.cliente,
         cnpj_destinatario=entrega.cnpj_destinatario,
-        status=entrega.status,
+        status=status,
         previsao_entrega_inicial=entrega.previsao_entrega_inicial,
         previsao_entrega=entrega.previsao_entrega,
         criado_por_id=user_id,

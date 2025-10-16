@@ -44,9 +44,12 @@ def send_notification_email(subject: str, message: str, to_email: str):
 
 
 def get_status_emoji(entrega: models.Entrega):
-    if entrega.status and "entregue" in entrega.status.lower():
-        return "Finalizado 🟢"
-    if entrega.previsao_entrega and entrega.previsao_entrega < datetime.now().date():
+    if entrega.status and (
+        "entregue" in entrega.status.lower()
+        or "entrega realizada" in entrega.status.lower()
+    ):
+        return "Entregue 🟢"
+    elif entrega.previsao_entrega or entrega.previsao_entrega < datetime.now().date():
         return "Em atraso 🔴"
     return "Em andamento 🔵"
 
@@ -81,7 +84,7 @@ def process_pending_notifications(user_id: int):
             message += f"{carrier.upper()}:\n"
             for entrega in deliveries:
                 if entrega.codigo_rastreio:
-                    message += f"Entrega: {entrega.codigo_rastreio}\n"
+                    message += f"Previsão de entrega: {entrega.previsao_entrega}\n"
                 if entrega.cliente:
                     message += f"Cliente: {entrega.cliente}\n"
                 if entrega.numero_nf:
@@ -94,8 +97,11 @@ def process_pending_notifications(user_id: int):
                         key=lambda m: m.dt_movimento or datetime.min,
                         reverse=True,
                     )[:2]:
-                        if mov.movimento and mov.dt_movimento:
-                            message += f"- {mov.movimento} | {mov.dt_movimento.strftime('%d/%m/%Y às %H:%M')}\n"
+                        if mov.movimento:
+                            if mov.dt_movimento:
+                                message += f"- {mov.movimento} | {mov.dt_movimento.strftime('%d/%m/%Y às %H:%M')}\n"
+                            else:
+                                message += f"- {mov.movimento}\n"
                 else:
                     message += "Sem novas movimentações\n"
                 message += "\n-----------------------------------------------------------------------------------------------------------\n"

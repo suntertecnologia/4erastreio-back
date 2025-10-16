@@ -9,8 +9,8 @@ class EntregaBase(BaseModel):
     numero_nf: str
     cliente: Optional[str] = None
     cnpj_destinatario: Optional[str] = None
-    previsao_entrega_inicial: date
-    previsao_entrega: date
+    previsao_entrega_inicial: Optional[date] = None
+    previsao_entrega: Optional[date] = None
 
 
 class EntregaCreate(EntregaBase):

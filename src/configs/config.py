@@ -50,3 +50,12 @@ CAMINHO_PLANILHA_ENTREGAS = "entregas.xlsx"
 BASE_URL = "http://127.0.0.1:8000"
 ENDPOINT_SCRAPING = f"{BASE_URL}/entrega/scrap"
 ENDPOINT_NOTIFICACAO = f"{BASE_URL}/notification/send-notifications"
+
+# --- Proxy Configurations ---
+# WARNING: Using free proxies is generally unreliable, slow, and can pose security risks.
+# They are often short-lived and may lead to frequent blocking or data integrity issues.
+# For robust scraping, consider using paid proxy services.
+BRASPRESS_PROXIES = [
+    # Add your Braspress proxies here, e.g., "http://user:pass@host:port"
+    # Example with authentication: "http://username:password@host:port"
+]

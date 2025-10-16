@@ -23,10 +23,18 @@ def normalize_braspress(data, cnpj, nota_fiscal):
     post_date_str = unique_history[0]["timestamp"].split(" ")[0]
     post_date = datetime.strptime(post_date_str, "%d/%m/%Y").strftime("%Y-%m-%d")
 
-    last_event = unique_history[-1]
     previsao_entrega = None
-    if "ENTREGA REALIZADA" in last_event["status"]:
-        previsao_entrega_str = last_event["timestamp"].split(" ")[0]
+    if data["resumo_etapas"]:
+        previsao_entrega = data["resumo_etapas"]["previsao_entrega"]
+        status = data["resumo_etapas"]["status"]
+
+    # Fallback to last event if "ENTREGA REALIZADA" and previsao_entrega not found yet
+    if (
+        not previsao_entrega
+        and unique_history
+        and "ENTREGA REALIZADA" in unique_history[-1]["status"]
+    ):
+        previsao_entrega_str = unique_history[-1]["timestamp"].split(" ")[0]
         previsao_entrega = datetime.strptime(previsao_entrega_str, "%d/%m/%Y").strftime(
             "%Y-%m-%d"
         )
@@ -64,8 +72,8 @@ def normalize_braspress(data, cnpj, nota_fiscal):
             "numero_nf": nota_fiscal,
             "previsao_entrega": previsao_entrega,
             "data_postagem": post_date,
-            "remetente": None,
-            "destinatario": None,
+            "remetente": {"nome": data.get("remetente_nome"), "cnpj": None},
+            "destinatario": {"nome": data.get("destinatario_nome"), "cnpj": cnpj},
             "cnpj_destinatario": cnpj,
         },
         "historico": normalized_history,

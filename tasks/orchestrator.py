@@ -174,7 +174,17 @@ async def main():
                         "entrega": entrega_data,
                     }
                 )
-            await asyncio.sleep(0.5)  # Small delay between sending requests
+
+            # --- NEW LOGIC FOR BRASPRESS ---
+            if entrega_data["transportadora"].lower() == "braspress":
+                logger.info(
+                    "Braspress detected. Waiting 100 seconds before next request to avoid blocking."
+                )
+                await asyncio.sleep(100)
+            else:
+                await asyncio.sleep(
+                    0.5
+                )  # Small delay between sending requests for other transporters
 
         logger.info(f"Sent {len(active_tasks)} scraping requests. Starting polling...")
 

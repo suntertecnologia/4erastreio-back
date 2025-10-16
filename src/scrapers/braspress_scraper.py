@@ -40,30 +40,13 @@ async def _parse_detailed_history(page: Page) -> list[dict]:
 
 async def _parse_summary_steps(page: Page) -> list[dict]:
     """Função auxiliar para extrair as etapas principais do resumo horizontal."""
-    summary_steps = []
-    container = page.locator("#row-step-tracking")
-
-    # Encontra todas as etapas principais no "wizard"
-    step_locators = await container.locator(".step-iten").all()
-
-    for step_locator in step_locators:
-        step_text = ""
-        date_text = ""
-
-        # Pega a descrição da etapa
-        step_loc = step_locator.locator(".step-txt-up")
-        if await step_loc.count() > 0:
-            step_text = (await step_loc.text_content() or "").strip()
-
-        # Pega a data da etapa
-        date_loc = step_locator.locator(".step-txt-date")
-        if await date_loc.count() > 0:
-            date_text = (await date_loc.text_content() or "").strip()
-
-        if step_text and date_text:
-            summary_steps.append({"date": date_text, "step": step_text})
-
-    return summary_steps
+    previsao_entrega = await page.locator(".dt-previsao-entrega").first.text_content()
+    status = await page.locator(".dt-status").first.text_content()
+    data_entrega = await page.locator(".dt-data-entrega").first.text_content()
+    data = {}
+    data["previsao_entrega"] = previsao_entrega
+    data["status"] = status
+    data["data_entrega"] = data_entrega
 
 
 class BrasspressScraper(BaseScraper):
@@ -127,14 +110,9 @@ class BrasspressScraper(BaseScraper):
 
         # 10. Extrair informações da entrega
         logger.info(f"{log_prefix} - Extraindo informações da entrega")
-        detailed_history = await _parse_detailed_history(frame_locator)
-        summary_steps = await _parse_summary_steps(frame_locator)
+        movimentacoes = await _parse_detailed_history(frame_locator)
+        resumo_entrega = await _parse_summary_steps(frame_locator)
+        data = {"resumo_etapas": resumo_entrega, "historico_detalhado": movimentacoes}
 
-        # Retornar dados estruturados
-        dados = {
-            "resumo_etapas": summary_steps,
-            "historico_detalhado": detailed_history,
-        }
-
-        logger.info(f"{log_prefix} - Dados extraídos: {dados}")
-        return self.success_response(dados)
+        logger.info(f"{log_prefix} - Dados extraídos: {data}")
+        return self.success_response(data)

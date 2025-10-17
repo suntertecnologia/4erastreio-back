@@ -112,10 +112,9 @@ class ScrapingTask(Base):
 
     id = Column(Integer, primary_key=True)
     task_id = Column(String(255), unique=True, nullable=False, index=True)
-    status = Column(
-        String(50), nullable=False, default="PENDING"
-    )  # PENDING, SUCCESS, FAILED
+    status = Column(String(50), nullable=False, default="PENDING")
     entrega_id = Column(Integer, ForeignKey("entregas.id"), nullable=True)
+    retries = Column(Integer, ForeignKey("entregas.id"), default=0)
     error_message = Column(Text, nullable=True)
     created_at = Column(
         DateTime(timezone=True), default=datetime.utcnow, nullable=False

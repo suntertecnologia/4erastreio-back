@@ -25,8 +25,9 @@ def build_email_html(
     # Cores
     brand_text = "#1E1E3D"
     brand_bg_soft = "#FFFFFF"
-    brand_pink = "#f74177"  # barra superior e “in transit”
+    brand_pink = "#f74177"  # barra superior
     ok_border = "#80D27C"  # entregue
+    transito = "4169E1"  # in transit
     late_border = "#E25757"  # atraso
 
     styles = f"""
@@ -58,7 +59,7 @@ def build_email_html(
     .carrier {{ font-weight:700; font-size:15px; letter-spacing:.3px; margin:18px 0 10px; }}
     .card {{
       border:1px dashed rgba(30,30,61,.18);
-      border-left:6px solid {brand_pink};  /* padrão rosa para estados neutros */
+      border-left:6px solid {transito};  /* padrão azul para estados neutros */
       border-radius:12px;
       padding:14px 16px;
       margin:10px 0 18px;

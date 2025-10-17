@@ -39,7 +39,10 @@ def create_entrega(db: Session, entrega: entregas_models.EntregaCreate, user_id:
     status = "em andamento"
     if entrega.historico:
         for movimento in entrega.historico:
-            if "entregue" in movimento.get("status", "").lower():
+            if ("entregue" or "realizada") in movimento.get("status", "").lower():
+                status = "entregue"
+                break
+            if ("REALIZADA") in movimento.get("status", ""):
                 status = "entregue"
                 break
 

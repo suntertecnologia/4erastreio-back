@@ -165,6 +165,27 @@ async def main():
         active_tasks = {}
         completed_results = []
 
+        for entrega in braspress_entregas:
+            result = await executar_scraping_com_retentativa(session, entrega, headers)
+            if result["status"] == "sent":
+                active_tasks[result["task_id"]] = {
+                    "entrega": entrega,
+                    "retries": 0,
+                    "initial_task_id": result["task_id"],
+                }
+            else:
+                completed_results.append(
+                    {
+                        "status": "FAILED",
+                        "error_message": result.get("error"),
+                        "entrega": entrega,
+                    }
+                )
+            logger.info(
+                f"Aguardando {BRASPRESS_DELAY_SECONDS}s para a próxima requisição da Braspress..."
+            )
+            await asyncio.sleep(BRASPRESS_DELAY_SECONDS)
+
         # Process other carriers concurrently
         tasks = [
             executar_scraping_com_retentativa(session, entrega, headers)
@@ -186,28 +207,6 @@ async def main():
                         "entrega": result["entrega"],
                     }
                 )
-
-        # Process Braspress requests sequentially with a delay
-        for entrega in braspress_entregas:
-            result = await executar_scraping_com_retentativa(session, entrega, headers)
-            if result["status"] == "sent":
-                active_tasks[result["task_id"]] = {
-                    "entrega": entrega,
-                    "retries": 0,
-                    "initial_task_id": result["task_id"],
-                }
-            else:
-                completed_results.append(
-                    {
-                        "status": "FAILED",
-                        "error_message": result.get("error"),
-                        "entrega": entrega,
-                    }
-                )
-            logger.info(
-                f"Aguardando {BRASPRESS_DELAY_SECONDS}s para a próxima requisição da Braspress..."
-            )
-            await asyncio.sleep(BRASPRESS_DELAY_SECONDS)
 
         logger.info(f"Sent {len(active_tasks)} scraping requests. Starting polling...")
 

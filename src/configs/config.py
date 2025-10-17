@@ -23,7 +23,7 @@ SCRAPER_URLS = {
 }
 
 BROWSER_CONFIG = {
-    "headless": False,  # Mude para False para ver o navegador em ação
+    "headless": True,  # Mude para False para ver o navegador em ação
     "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
     "viewport": {"width": 1280, "height": 800},
 }
@@ -51,13 +51,4 @@ CAMINHO_PLANILHA_ENTREGAS = "entregas.xlsx"
 BASE_URL = "http://127.0.0.1:8000"
 ENDPOINT_SCRAPING = f"{BASE_URL}/entrega/scrap"
 ENDPOINT_NOTIFICACAO = f"{BASE_URL}/notification/send-notifications"
-BRASPRESS_DELAY_SECONDS = 60  # 60 minutos
-
-# --- Proxy Configurations ---
-# WARNING: Using free proxies is generally unreliable, slow, and can pose security risks.
-# They are often short-lived and may lead to frequent blocking or data integrity issues.
-# For robust scraping, consider using paid proxy services.
-BRASPRESS_PROXIES = [
-    # Add your Braspress proxies here, e.g., "http://user:pass@host:port"
-    # Example with authentication: "http://username:password@host:port"
-]
+BRASPRESS_DELAY_SECONDS = 180  # em segundos

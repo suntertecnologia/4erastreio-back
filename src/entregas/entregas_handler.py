@@ -95,7 +95,7 @@ def scrap_and_save(
                         new_status = existing_entrega.status
                         if scraped_data.get("historico"):
                             has_entregue = any(
-                                ("entregue" or "entrega realizada")
+                                ("entregue" or "realizada")
                                 in m.get("status", "").lower()
                                 for m in scraped_data["historico"]
                             )

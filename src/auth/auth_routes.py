@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from src.auth import auth_crud, auth_handler, auth_models
+from src.auth import auth_models, auth_service
 from src.db import database
 from src.configs.logger_config import logger
 
@@ -10,18 +10,13 @@ router = APIRouter()
 @router.post("/register", response_model=auth_models.UserOut)
 def register(user: auth_models.UserAuth, db: Session = Depends(database.get_db)):
     logger.info(f"Attempting to register user with email: {user.email}")
-    db_user = auth_crud.get_user_by_email(db, email=user.email)
-    if db_user:
-        logger.warning(f"Email {user.email} already registered.")
-        raise HTTPException(status_code=400, detail="Email already registered")
     try:
-        username = user.email.split("@")[0]
-        hashed_password = auth_handler.get_password_hash(user.password)
-        db_user = auth_crud.create_user(
-            db=db, username=username, email=user.email, hashed_password=hashed_password
-        )
+        db_user = auth_service.register_user(db, user)
         logger.info(f"User with email {user.email} registered successfully.")
         return db_user
+    except HTTPException as e:
+        logger.warning(f"Failed to register user {user.email}: {e.detail}")
+        raise e
     except Exception as e:
         logger.error(
             f"Error registering user with email {user.email}: {e}", exc_info=True
@@ -34,22 +29,17 @@ def register(user: auth_models.UserAuth, db: Session = Depends(database.get_db))
 @router.post("/login", response_model=auth_models.Token)
 def login(user: auth_models.UserAuth, db: Session = Depends(database.get_db)):
     logger.info(f"Attempting to login user with email: {user.email}")
-    db_user = auth_crud.get_user_by_email(db, email=user.email)
-    if not db_user or not auth_handler.verify_password(
-        user.password, db_user.senha_hash
-    ):
-        logger.warning(f"Invalid login attempt for email: {user.email}")
-        raise HTTPException(status_code=401, detail="Incorrect email or password")
-
-    if not db_user.is_active:
-        logger.warning(f"Login attempt from inactive user with email: {user.email}")
-        raise HTTPException(status_code=400, detail="Inactive user")
-
-    logger.info(f"User with email {user.email} logged in successfully.")
-    access_token = auth_handler.create_access_token(data={"sub": db_user.email})
-    refresh_token = auth_handler.create_refresh_token(data={"sub": db_user.email})
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "refresh_token": refresh_token,
-    }
+    try:
+        tokens = auth_service.login_user(db, user)
+        logger.info(f"User with email {user.email} logged in successfully.")
+        return tokens
+    except HTTPException as e:
+        logger.warning(f"Failed to login user {user.email}: {e.detail}")
+        raise e
+    except Exception as e:
+        logger.error(
+            f"Error logging in user with email {user.email}: {e}", exc_info=True
+        )
+        raise HTTPException(
+            status_code=500, detail="Internal server error during user login."
+        )

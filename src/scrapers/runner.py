@@ -2,12 +2,7 @@ from .accert_scraper import AccertScraper
 from .jamef_scraper import JamefScraper
 from .braspress_scraper import BrasspressScraper
 from .viaverde_scraper import ViaVerdeScraper
-from ..utils.normalize_scrap_data import (
-    normalize_accert,
-    normalize_jamef,
-    normalize_braspress,
-    normalize_viaverde,
-)
+from ..utils.normalizer_factory import get_normalizer
 import os
 from dotenv import load_dotenv
 
@@ -16,13 +11,6 @@ SCRAPERS = {
     "jamef": JamefScraper,
     "braspress": BrasspressScraper,
     "viaverde": ViaVerdeScraper,
-}
-
-NORMALIZERS = {
-    "accert": normalize_accert,
-    "jamef": normalize_jamef,
-    "braspress": normalize_braspress,
-    "viaverde": normalize_viaverde,
 }
 
 
@@ -37,12 +25,11 @@ async def run_scraper(
     """
     load_dotenv()
     scraper_class = SCRAPERS.get(transportadora.lower())
-    normalizer_func = NORMALIZERS.get(transportadora.lower())
-
-    if not scraper_class or not normalizer_func:
+    if not scraper_class:
         raise ValueError(f"Transportadora '{transportadora}' not supported.")
 
     scraper = scraper_class()
+    normalizer_func = get_normalizer(transportadora)
 
     if transportadora.lower() == "viaverde":
         if credentials:
@@ -52,7 +39,6 @@ async def run_scraper(
                 n_rastreio=numero_nf,
             )
         else:
-            # Add default credentials from .env for viaverde
             raw_data = await scraper.execute(
                 login=os.getenv("VIAVERDE_USER"),
                 senha=os.getenv("VIAVERDE_PASSWORD"),

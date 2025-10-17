@@ -1,55 +1,9 @@
-import re
 from ..configs.logger_config import logger
-from playwright.async_api import Page, Error
+from playwright.async_api import Error
 from .base_scraper import BaseScraper
 from ..configs.config import SCRAPER_URLS, TIMEOUTS
 from .scrapper_data_model import ScraperResponse
-
-
-async def _parse_detailed_history(page: Page) -> list[dict]:
-    """Função auxiliar para extrair o histórico detalhado da timeline vertical."""
-    history_events = []
-    container = page.locator("#timeline2482705908231")
-
-    # Encontra todas as entradas individuais na timeline
-    event_locators = await container.locator(
-        ".vertical-time-line._tracking-datail"
-    ).all()
-
-    for event_locator in event_locators:
-        status_text = ""
-        timestamp_text = ""
-
-        # Pega a descrição do status
-        info_loc = event_locator.locator(".vertical-time-line-info")
-        if await info_loc.count() > 0:
-            status_text = await info_loc.inner_text()
-            # Limpa o texto, removendo tags <br> e outros elementos internos
-            status_text = re.sub(r"<br>.*", "", status_text).strip()
-
-        # Pega a data e hora
-        date_loc = event_locator.locator(".vertical-time-line-date")
-        if await date_loc.count() > 0:
-            timestamp_text = (await date_loc.text_content() or "").strip()
-
-        if status_text and timestamp_text:
-            history_events.append({"timestamp": timestamp_text, "status": status_text})
-
-    return history_events
-
-
-async def _parse_summary_steps(page: Page) -> dict:
-    """Função auxiliar para extrair as etapas principais do resumo horizontal."""
-    previsao_entrega = (
-        await page.locator(".dt-previsao-entrega").first.text_content() or ""
-    )
-    status = await page.locator(".dt-status").first.text_content() or ""
-    data_entrega = await page.locator(".dt-data-entrega").first.text_content() or ""
-    data = {}
-    data["previsao_entrega"] = previsao_entrega
-    data["status"] = status
-    data["data_entrega"] = data_entrega
-    return data
+from . import braspress_handler
 
 
 class BrasspressScraper(BaseScraper):
@@ -72,7 +26,6 @@ class BrasspressScraper(BaseScraper):
         page = await self.create_page()
         log_prefix = self._get_log_prefix(cnpj=cnpj, nota_fiscal=nota_fiscal)
 
-        # 1. Acessar página de rastreamento
         logger.info(f"{log_prefix} - Acessando a página de rastreamento da BRASPRESS")
         try:
             await page.goto(SCRAPER_URLS["braspress"], timeout=TIMEOUTS["page_load"])
@@ -82,45 +35,36 @@ class BrasspressScraper(BaseScraper):
                 "network_error", f"Erro ao acessar a página: {e}"
             )
 
-        # 2. Preencher CNPJ
         logger.info(f"{log_prefix} - Preenchendo CNPJ: {cnpj}")
         await page.fill("#cnpj-tracking", cnpj)
 
-        # 3. Preencher Nota Fiscal
         logger.info(f"{log_prefix} - Preenchendo Nota Fiscal: {nota_fiscal}")
         nota_fiscal_input = await page.wait_for_selector(
             "#pedido-tracking", timeout=TIMEOUTS["selector_wait"]
         )
         await nota_fiscal_input.fill(nota_fiscal)
 
-        # 4. Fechar pop-up
         logger.info(f"{log_prefix} - Fechando pop-up")
         await page.locator(f'svg:has(path[d*="{"M1490 1322q0 40"}"])').click()
 
-        # 5. Clicar no botão de busca
         logger.info(f"{log_prefix} - Clicando no botão de busca")
         await page.locator(".search-tracking").click()
 
-        # 6. Aguardar página de resultados carregar
         logger.info(f"{log_prefix} - Aguardando a página de resultados carregar")
         await page.wait_for_load_state("networkidle")
 
-        # 7. Entrar no iframe de rastreamento
         logger.info(f"{log_prefix} - Entrando no iframe de rastreamento")
         frame_locator = page.frame_locator("#iframe-tracking")
 
-        # 8. Clicar no botão detalhes de rastreamento
         logger.info(f"{log_prefix} - Clicando no botão detalhes de rastreamento")
         await frame_locator.get_by_text("Detalhes do Rastreamento").first.click()
 
-        # 9. Clicar no botão mais detalhes
         logger.info(f"{log_prefix} - Clicando no botão mais detalhes")
         await frame_locator.get_by_text("Mais Detalhes").first.click()
 
-        # 10. Extrair informações da entrega
         logger.info(f"{log_prefix} - Extraindo informações da entrega")
-        movimentacoes = await _parse_detailed_history(frame_locator)
-        resumo_entrega = await _parse_summary_steps(frame_locator)
+        movimentacoes = await braspress_handler.parse_detailed_history(frame_locator)
+        resumo_entrega = await braspress_handler.parse_summary_steps(frame_locator)
         data = {"resumo_etapas": resumo_entrega, "historico_detalhado": movimentacoes}
 
         logger.info(f"{log_prefix} - Dados extraídos: {data}")

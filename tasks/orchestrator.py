@@ -19,7 +19,7 @@ from src.configs.config import (
     TIMEOUTS,
 )
 
-Braspress_wait = TIMEOUTS["Brasspress_wait"]
+Braspress_wait = TIMEOUTS["Brasspress_wait"] / 1000
 
 
 async def get_auth_token(session: aiohttp.ClientSession) -> str:
@@ -183,9 +183,9 @@ async def main():
             # --- NEW LOGIC FOR BRASPRESS ---
             if entrega_data["transportadora"].lower() == "braspress":
                 logger.info(
-                    f"Braspress detected. Waiting {Braspress_wait/100} seconds before next request to avoid blocking."
+                    f"Braspress detected. Waiting {Braspress_wait} seconds before next request to avoid blocking."
                 )
-                await asyncio.sleep(Braspress_wait / 100)
+                await asyncio.sleep(Braspress_wait)
 
         logger.info(f"Sent {len(active_tasks)} scraping requests. Starting polling...")
 

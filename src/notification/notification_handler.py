@@ -1,18 +1,22 @@
 import smtplib
 import os
 from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from src.notification import notification_crud
 from src.db import database, models
 from src.configs.logger_config import logger
+from src.utils.html_email_constructor import build_email_html
 from datetime import datetime
 from collections import defaultdict
 
 
 def send_notification_email(subject: str, message: str, to_email: str):
-    """Sends a notification email using SMTP."""
+    """Envia e-mail SOMENTE em HTML via SMTP."""
+    import os
+    from email.header import Header
+    from dotenv import load_dotenv
+
     load_dotenv()
     SMTP_SERVER = os.getenv("SMTP_SERVER")
     SMTP_PORT = os.getenv("SMTP_PORT")
@@ -25,19 +29,17 @@ def send_notification_email(subject: str, message: str, to_email: str):
         )
         return
 
-    msg = MIMEMultipart()
+    # Somente HTML
+    msg = MIMEText(message, "html", "utf-8")
     msg["From"] = SMTP_USER
     msg["To"] = to_email
-    msg["Subject"] = subject
-    msg.attach(MIMEText(message, "plain"))
+    msg["Subject"] = Header(subject, "utf-8")
 
     try:
-        server = smtplib.SMTP(SMTP_SERVER, int(SMTP_PORT))
-        server.starttls()
-        server.login(SMTP_USER, SMTP_PASSWORD)
-        text = msg.as_string()
-        server.sendmail(SMTP_USER, to_email, text)
-        server.quit()
+        with smtplib.SMTP(SMTP_SERVER, int(SMTP_PORT)) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.sendmail(SMTP_USER, [to_email], msg.as_string())
         logger.info(f"Email sent successfully to {to_email}")
     except Exception as e:
         logger.error(f"Error sending email: {e}")
@@ -55,6 +57,8 @@ def process_pending_notifications(user_id: int):
     """Processes all pending notifications."""
     load_dotenv()
     SMTP_USER = os.getenv("SMTP_USER")
+    LOGO_URL = os.getenv("LOGO_URL")
+    COMPANY_NAME = os.getenv("COMPANY_NAME")
     db: Session = database.SessionLocal()
     try:
         pending_notifications = notification_crud.get_pending_notifications(db)
@@ -73,40 +77,18 @@ def process_pending_notifications(user_id: int):
                 deliveries_by_carrier[entrega.transportadora].append(entrega)
 
         now = datetime.now()
-        message = "Olá, abaixo o resumo das suas entregas 🚚\n"
-        message += "-----------------------------------------------------------------\n"
-        message += f"Status verificados em: {now.strftime('%d/%m/%Y às %H:%M')}\n"
+        html_email = build_email_html(
+            deliveries_by_carrier,
+            now,
+            get_status_emoji,
+            logo_url=LOGO_URL,
+            company_name=COMPANY_NAME,
+        )
 
-        for carrier, deliveries in deliveries_by_carrier.items():
-            message += f"{carrier.upper()}:\n"
-            for entrega in deliveries:
-                if entrega.codigo_rastreio:
-                    message += f"Previsão de entrega: {entrega.previsao_entrega}\n"
-                if entrega.cliente:
-                    message += f"Cliente: {entrega.cliente}\n"
-                if entrega.numero_nf:
-                    message += f"NF: {entrega.numero_nf}\n"
-                message += f"Status: {get_status_emoji(entrega)}\n"
-                message += "Últimas movimentações\n"
-                if entrega.movimentacoes:
-                    for mov in sorted(
-                        entrega.movimentacoes,
-                        key=lambda m: m.dt_movimento or datetime.min,
-                        reverse=True,
-                    )[:2]:
-                        if mov.movimento:
-                            if mov.dt_movimento:
-                                message += f"- {mov.movimento} | {mov.dt_movimento.strftime('%d/%m/%Y às %H:%M')}\n"
-                            else:
-                                message += f"- {mov.movimento}\n"
-                else:
-                    message += "Sem novas movimentações\n"
-                message += "\n-----------------------------------------------------------------------------------------------------------\n"
-
-        send_notification_email("Atualização de Entregas", message, SMTP_USER)
+        send_notification_email("Atualização de Entregas", html_email, SMTP_USER)
 
         log = notification_crud.create_notification_log(
-            db, detalhes=message, status="enviado", entrega_id=None, user_id=user_id
+            db, detalhes=html_email, status="enviado", entrega_id=None, user_id=user_id
         )
 
         for mov in pending_notifications:

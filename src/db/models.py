@@ -1,7 +1,6 @@
 # models.py
 
 from sqlalchemy import (
-    create_engine,
     Column,
     Integer,
     String,
@@ -139,10 +138,3 @@ class ScrapingTask(Base):
 def criar_tabelas(engine):
     Base.metadata.create_all(engine)
     print("Tabelas criadas com sucesso!")
-
-
-if __name__ == "__main__":
-    # Este bloco permite que você execute `python models.py` para criar o banco
-    # Usando SQLite para o exemplo de criação de tabelas
-    sqlite_engine = create_engine("sqlite:///./test.db")
-    criar_tabelas(sqlite_engine)

@@ -16,10 +16,8 @@ from src.configs.config import (
     ORCHESTRATOR_USER_EMAIL,
     ORCHESTRATOR_USER_PASSWORD,
     BASE_URL,
-    TIMEOUTS,
+    BRASPRESS_DELAY_SECONDS,
 )
-
-Braspress_wait = TIMEOUTS["Brasspress_wait"] / 1000
 
 
 async def get_auth_token(session: aiohttp.ClientSession) -> str:
@@ -150,24 +148,33 @@ async def main():
             )
             return
 
-        active_tasks = (
-            {}
-        )  # {task_id: {"entrega": {...}, "retries": 0, "initial_task_id": "..."}}
-        completed_results = []
+        braspress_entregas = []
+        other_entregas = []
 
-        # Send initial scraping requests
-        for index, entrega in df_entregas.iterrows():
+        for _, entrega in df_entregas.iterrows():
             entrega_data = {
                 "transportadora": str(entrega["transportadora"]),
                 "numero_nf": str(entrega["numero_nf"]),
                 "cnpj_destinatario": str(entrega["cnpj_destinatario"]),
             }
-            result = await executar_scraping_com_retentativa(
-                session, entrega_data, headers
-            )
+            if entrega_data["transportadora"].lower() == "braspress":
+                braspress_entregas.append(entrega_data)
+            else:
+                other_entregas.append(entrega_data)
+
+        active_tasks = {}
+        completed_results = []
+
+        # Process other carriers concurrently
+        tasks = [
+            executar_scraping_com_retentativa(session, entrega, headers)
+            for entrega in other_entregas
+        ]
+        results = await asyncio.gather(*tasks)
+        for result in results:
             if result["status"] == "sent":
                 active_tasks[result["task_id"]] = {
-                    "entrega": entrega_data,
+                    "entrega": result["entrega"],
                     "retries": 0,
                     "initial_task_id": result["task_id"],
                 }
@@ -176,16 +183,31 @@ async def main():
                     {
                         "status": "FAILED",
                         "error_message": result.get("error"),
-                        "entrega": entrega_data,
+                        "entrega": result["entrega"],
                     }
                 )
 
-            # --- NEW LOGIC FOR BRASPRESS ---
-            if entrega_data["transportadora"].lower() == "braspress":
-                logger.info(
-                    f"Braspress detected. Waiting {Braspress_wait} seconds before next request to avoid blocking."
+        # Process Braspress requests sequentially with a delay
+        for entrega in braspress_entregas:
+            result = await executar_scraping_com_retentativa(session, entrega, headers)
+            if result["status"] == "sent":
+                active_tasks[result["task_id"]] = {
+                    "entrega": entrega,
+                    "retries": 0,
+                    "initial_task_id": result["task_id"],
+                }
+            else:
+                completed_results.append(
+                    {
+                        "status": "FAILED",
+                        "error_message": result.get("error"),
+                        "entrega": entrega,
+                    }
                 )
-                await asyncio.sleep(Braspress_wait)
+            logger.info(
+                f"Aguardando {BRASPRESS_DELAY_SECONDS}s para a próxima requisição da Braspress..."
+            )
+            await asyncio.sleep(BRASPRESS_DELAY_SECONDS)
 
         logger.info(f"Sent {len(active_tasks)} scraping requests. Starting polling...")
 
@@ -219,21 +241,18 @@ async def main():
                         logger.info(
                             f"Retrying task {task_id} for NF {active_tasks[task_id]['entrega']['numero_nf']} (Retry {active_tasks[task_id]["retries"]}/{TENTATIVAS_MAXIMAS})..."
                         )
-                        # Re-send the scraping request, which will create a new task_id
                         entrega_data = active_tasks[task_id]["entrega"]
                         new_result = await executar_scraping_com_retentativa(
                             session, entrega_data, headers
                         )
                         if new_result["status"] == "sent":
-                            # Replace old task_id with new one, keep retry count
                             active_tasks[new_result["task_id"]] = active_tasks.pop(
                                 task_id
                             )
                             active_tasks[new_result["task_id"]]["initial_task_id"] = (
                                 new_result["task_id"]
-                            )  # Update initial_task_id
+                            )
                         else:
-                            # Failed to even send retry request
                             completed_results.append(
                                 {
                                     "status": "FAILED",
@@ -256,13 +275,10 @@ async def main():
                             }
                         )
                         del active_tasks[task_id]
-                # If status is PENDING or IN_PROGRESS, do nothing and check again later
 
             if active_tasks:
                 logger.info(f"Waiting for {len(active_tasks)} tasks to complete...")
-                await asyncio.sleep(
-                    DELAY_ENTRE_TENTATIVAS_SEGUNDOS
-                )  # Wait before polling again
+                await asyncio.sleep(DELAY_ENTRE_TENTATIVAS_SEGUNDOS)
 
         logger.info("All scraping tasks completed or failed after retries.")
         await notificar_resultados(session, completed_results, headers)

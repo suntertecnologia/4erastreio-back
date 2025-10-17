@@ -51,6 +51,7 @@ CAMINHO_PLANILHA_ENTREGAS = "entregas.xlsx"
 BASE_URL = "http://127.0.0.1:8000"
 ENDPOINT_SCRAPING = f"{BASE_URL}/entrega/scrap"
 ENDPOINT_NOTIFICACAO = f"{BASE_URL}/notification/send-notifications"
+BRASPRESS_DELAY_SECONDS = 60  # 60 minutos
 
 # --- Proxy Configurations ---
 # WARNING: Using free proxies is generally unreliable, slow, and can pose security risks.

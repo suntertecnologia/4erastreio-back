@@ -70,7 +70,7 @@ def normalize_braspress(data, cnpj, nota_fiscal):
             "transportadora": "BRASPRESS",
             "codigo_rastreio": nota_fiscal,
             "numero_nf": nota_fiscal,
-            "previsao_entrega": previsao_entrega,
+            "previsao_entrega": datetime.strptime(previsao_entrega, "%d/%m/%Y"),
             "data_postagem": post_date,
             "remetente": None,
             "destinatario": None,

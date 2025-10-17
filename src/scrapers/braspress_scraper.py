@@ -1,6 +1,6 @@
 import re
 from ..configs.logger_config import logger
-from playwright.async_api import Page
+from playwright.async_api import Page, Error
 from .base_scraper import BaseScraper
 from ..configs.config import SCRAPER_URLS, TIMEOUTS
 from .scrapper_data_model import ScraperResponse
@@ -38,15 +38,18 @@ async def _parse_detailed_history(page: Page) -> list[dict]:
     return history_events
 
 
-async def _parse_summary_steps(page: Page) -> list[dict]:
+async def _parse_summary_steps(page: Page) -> dict:
     """Função auxiliar para extrair as etapas principais do resumo horizontal."""
-    previsao_entrega = await page.locator(".dt-previsao-entrega").first.text_content()
-    status = await page.locator(".dt-status").first.text_content()
-    data_entrega = await page.locator(".dt-data-entrega").first.text_content()
+    previsao_entrega = (
+        await page.locator(".dt-previsao-entrega").first.text_content() or ""
+    )
+    status = await page.locator(".dt-status").first.text_content() or ""
+    data_entrega = await page.locator(".dt-data-entrega").first.text_content() or ""
     data = {}
     data["previsao_entrega"] = previsao_entrega
     data["status"] = status
     data["data_entrega"] = data_entrega
+    return data
 
 
 class BrasspressScraper(BaseScraper):
@@ -71,7 +74,13 @@ class BrasspressScraper(BaseScraper):
 
         # 1. Acessar página de rastreamento
         logger.info(f"{log_prefix} - Acessando a página de rastreamento da BRASPRESS")
-        await page.goto(SCRAPER_URLS["braspress"], timeout=TIMEOUTS["page_load"])
+        try:
+            await page.goto(SCRAPER_URLS["braspress"], timeout=TIMEOUTS["page_load"])
+        except Error as e:
+            logger.error(f"{log_prefix} - Erro ao acessar a página: {e}")
+            return self.error_response(
+                "network_error", f"Erro ao acessar a página: {e}"
+            )
 
         # 2. Preencher CNPJ
         logger.info(f"{log_prefix} - Preenchendo CNPJ: {cnpj}")

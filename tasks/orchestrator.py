@@ -2,6 +2,7 @@ import sys
 import os
 import asyncio
 import aiohttp
+from tasks.create_orchestrator_user import create_user
 
 # Add the project root to the sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -15,7 +16,10 @@ from src.configs.config import (
     ORCHESTRATOR_USER_EMAIL,
     ORCHESTRATOR_USER_PASSWORD,
     BASE_URL,
+    TIMEOUTS,
 )
+
+Braspress_wait = TIMEOUTS["Brasspress_wait"]
 
 
 async def get_auth_token(session: aiohttp.ClientSession) -> str:
@@ -126,6 +130,7 @@ async def main():
     logger.info("=" * 50)
     logger.info(" INICIANDO ROTINA DE RASTREAMENTO AGENDADA ")
     logger.info("=" * 50)
+    create_user()
 
     async with aiohttp.ClientSession() as session:
         try:
@@ -178,13 +183,9 @@ async def main():
             # --- NEW LOGIC FOR BRASPRESS ---
             if entrega_data["transportadora"].lower() == "braspress":
                 logger.info(
-                    "Braspress detected. Waiting 100 seconds before next request to avoid blocking."
+                    f"Braspress detected. Waiting {Braspress_wait/100} seconds before next request to avoid blocking."
                 )
-                await asyncio.sleep(100)
-            else:
-                await asyncio.sleep(
-                    0.5
-                )  # Small delay between sending requests for other transporters
+                await asyncio.sleep(Braspress_wait / 100)
 
         logger.info(f"Sent {len(active_tasks)} scraping requests. Starting polling...")
 

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo de Entregas</title>
+  <style>
+    body { margin:0; padding:0; background:#F2FFF6; }
+    table { border-collapse:collapse; }
+    .outer {
+      width:100%; background:#F2FFF6; padding:24px 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, "Helvetica Neue", sans-serif;
+      color:#1E1E3D;
+    }
+    .container {
+      width:100%; max-width:720px; margin:0 auto; background:#fff;
+      border-radius:14px; overflow:hidden; box-shadow:0 10px 30px rgba(30,30,61,.12);
+      border:1px solid rgba(30,30,61,.06);
+    }
+    .brandbar { height:6px; background:linear-gradient(90deg,#80D27C 0%, #A2E09F 60%, #80D27C 100%); }
+    .header { padding:22px 24px; background:linear-gradient(180deg,#F2FFF6,rgba(242,255,246,.85)); border-bottom:1px solid rgba(30,30,61,.06); }
+    .title { font-size:20px; font-weight:700; margin:0 0 6px; }
+    .subtitle { font-size:14px; margin:0; opacity:.85; }
+    .content { padding:16px 24px 8px; }
+    .carrier { font-weight:700; font-size:15px; letter-spacing:.3px; margin:18px 0 10px; }
+    .card {
+      border:1px dashed rgba(30,30,61,.18);
+      border-left:6px solid #80D27C;
+      border-radius:12px;
+      padding:14px 16px;
+      margin:10px 0 18px;
+      background:#ffffff;
+    }
+    .kv { margin:0 0 6px; font-size:14px; }
+    .kv strong { display:inline-block; min-width:160px; }
+    .status-badge { display:inline-block; font-weight:700; font-size:12px; padding:3px 8px; border-radius:999px; border:1px solid; margin-left:8px; }
+    .ok { background:#EAF8EF; border-color:#80D27C; }
+    .late { background:#FDEAEA; border-color:#E25757; }
+    .moves-title { margin:12px 0 6px; font-weight:700; font-size:14px; }
+    .moves { margin:0; padding-left:18px; font-size:14px; }
+    .longline { border:none; height:1px; background:#ddd; margin:18px 0; }
+    .divider { height:1px; background:repeating-linear-gradient(90deg, rgba(30,30,61,.12), rgba(30,30,61,.12) 8px, transparent 8px, transparent 16px); margin:18px 0; }
+    .footer { padding:18px 24px; font-size:12px; color:#1E1E3D; opacity:.7; text-align:center; }
+    @media (max-width: 480px) { .title { font-size:18px; } .kv strong { min-width:140px; } }
+  </style>
+</head>
+<body>
+  <div class="outer">
+    <table role="presentation" class="container" width="100%">
+      <tr><td class="brandbar"></td></tr>
+      <tr>
+        <td class="header">
+          <p class="title">Olá, abaixo o resumo das suas entregas 🚚</p>
+          <p class="subtitle">Status verificados em: <strong>17/10/2025 às 09:44</strong></p>
+        </td>
+      </tr>
+
+      <tr><td class="content">
+        <!-- VIAVERDE -->
+        <div class="carrier">VIAVERDE:</div>
+
+        <div class="card">
+          <p class="kv"><strong>Previsão de entrega:</strong> 2025-10-06</p>
+          <p class="kv"><strong>NF:</strong> 118895</p>
+          <p class="kv"><strong>Status:</strong> Entregue 🟢 <span class="status-badge ok">Concluída</span></p>
+          <p class="moves-title">Últimas movimentações</p>
+          <ul class="moves">
+            <li>- 001 - MATERIAL ENTREGUE</li>
+            <li>- 604 - CHEGADA UND.DESTINO</li>
+          </ul>
+        </div>
+
+        <hr class="longline" />
+
+        <div class="card">
+          <p class="kv"><strong>Previsão de entrega:</strong> 2025-07-09</p>
+          <p class="kv"><strong>NF:</strong> 117024</p>
+          <p class="kv"><strong>Status:</strong> Entregue 🟢 <span class="status-badge ok">Concluída</span></p>
+          <p class="moves-title">Últimas movimentações</p>
+          <ul class="moves">
+            <li>- 001 - MATERIAL ENTREGUE</li>
+            <li>- 605 - MERC.EM PROCESSO DE ENTREGA</li>
+          </ul>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- ACCERT -->
+        <div class="carrier">ACCERT:</div>
+
+        <div class="card">
+          <p class="kv"><strong>Previsão de entrega:</strong> 2025-10-02</p>
+          <p class="kv"><strong>NF:</strong> 15095</p>
+          <p class="kv"><strong>Status:</strong> Entregue 🟢 <span class="status-badge ok">Concluída</span></p>
+          <p class="moves-title">Últimas movimentações</p>
+          <ul class="moves">
+            <li>- MERCADORIA ENTREGUE - | 30/09/2025 às 18:38</li>
+            <li>- SAIDA PARA ENTREGA - | 30/09/2025 às 09:27</li>
+          </ul>
+        </div>
+
+        <hr class="longline" />
+
+        <div class="card">
+          <p class="kv"><strong>Previsão de entrega:</strong> 2025-09-24</p>
+          <p class="kv"><strong>NF:</strong> 15055</p>
+          <p class="kv"><strong>Status:</strong> Entregue 🟢 <span class="status-badge ok">Concluída</span></p>
+          <p class="moves-title">Últimas movimentações</p>
+          <ul class="moves">
+            <li>- MERCADORIA ENTREGUE - | 24/09/2025 às 18:58</li>
+            <li>- SAIDA PARA ENTREGA - | 24/09/2025 às 10:29</li>
+          </ul>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- JAMEF -->
+        <div class="carrier">JAMEF:</div>
+
+        <div class="card">
+          <p class="kv"><strong>Previsão de entrega:</strong> 2025-10-03</p>
+          <p class="kv"><strong>NF:</strong> 1160274</p>
+          <p class="kv"><strong>Status:</strong> Em atraso 🔴 <span class="status-badge late">Atenção</span></p>
+          <p class="moves-title">Últimas movimentações</p>
+          <ul class="moves">
+            <li>- ENTREGA REALIZADA NORMALMENTE | 03/10/2025 às 15:00</li>
+            <li>- ENTREGA REALIZADA NORMALMENTE | 03/10/2025 às 15:00</li>
+          </ul>
+        </div>
+
+        <hr class="longline" />
+
+        <div class="card">
+          <p class="kv"><strong>Previsão de entrega:</strong> 2025-10-07</p>
+          <p class="kv"><strong>NF:</strong> 1160563</p>
+          <p class="kv"><strong>Status:</strong> Em atraso 🔴 <span class="status-badge late">Atenção</span></p>
+          <p class="moves-title">Últimas movimentações</p>
+          <ul class="moves">
+            <li>- ENTREGA REALIZADA NORMALMENTE | 07/10/2025 às 15:37</li>
+            <li>- ENTREGA REALIZADA NORMALMENTE | 07/10/2025 às 15:37</li>
+          </ul>
+        </div>
+
+        <hr class="longline" />
+
+        <div class="card">
+          <p class="kv"><strong>Previsão de entrega:</strong> 2025-10-07</p>
+          <p class="kv"><strong>NF:</strong> 1160899</p>
+          <p class="kv"><strong>Status:</strong> Em atraso 🔴 <span class="status-badge late">Atenção</span></p>
+          <p class="moves-title">Últimas movimentações</p>
+          <ul class="moves">
+            <li>- ENTREGA REALIZADA NORMALMENTE | 07/10/2025 às 13:12</li>
+            <li>- ENTREGA REALIZADA NORMALMENTE | 07/10/2025 às 13:12</li>
+          </ul>
+        </div>
+
+      </td></tr>
+
+      <tr>
+        <td class="footer">
+          Este é um e-mail automático. Em caso de dúvidas, responda esta mensagem para falar com nosso time.
+        </td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>

@@ -34,6 +34,7 @@ TIMEOUTS = {
     "page_load": 30000,  # 30 segundos para carregar uma página
     "selector_wait": 30000,  # 30 segundos para carregar uma página
     "element_wait": 30000,  # 30 segundos para carregar uma página
+    "Brasspress_wait": 60000,
 }
 
 SCREENSHOT_ENABLED = True  # Habilita/desabilita a captura de tela em caso de erro

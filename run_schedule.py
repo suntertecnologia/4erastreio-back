@@ -17,7 +17,7 @@ async def agendador_principal(time_cron: int):
 
 
 if __name__ == "__main__":
-    INTERVALO = 10  # minutos
+    INTERVALO = 30  # minutos
     try:
         # Usa asyncio.run para iniciar o agendador principal
         asyncio.run(agendador_principal(INTERVALO))
